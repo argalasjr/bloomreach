@@ -1,0 +1,51 @@
+<div class="filters-module">
+  <div class="filters-module__header">
+    <h1>Customer Events</h1>
+    <div class="filters-module__actions">
+      <button (click)="refreshEvents()" [disabled]="eventsResource().isLoading()">
+        {{ eventsResource().isLoading() ? 'Loading...' : 'Refresh' }}
+      </button>
+      <button (click)="clearCache()">Clear Cache</button>
+    </div>
+  </div>
+
+  @if (eventsResource().isLoading()) {
+    <div class="filters-module__loading">
+      <p>Loading customer events...</p>
+    </div>
+  }
+
+  @if (eventsResource().error()) {
+    <div class="filters-module__error">
+      <p>Error loading events: {{ eventsResource().error() }}</p>
+      <button (click)="eventsResource().reload()">Retry</button>
+    </div>
+  }
+
+  @if (eventsResource().value(); as events) {
+    <div class="filters-module__content">
+      <p class="filters-module__summary">
+        Total Events: <strong>{{ events.events.length }}</strong>
+      </p>
+
+      <div class="filters-module__events">
+        @for (event of events.events; track event.type) {
+          <div class="event-card">
+            <h3 class="event-card__title">{{ event.type }}</h3>
+            <div class="event-card__properties">
+              <p><strong>Properties:</strong> {{ event.properties.length }}</p>
+              <ul class="event-card__property-list">
+                @for (property of event.properties; track property.property) {
+                  <li>
+                    <span class="property-name">{{ property.property }}</span>
+                    <span class="property-type">{{ property.type }}</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>

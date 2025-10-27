@@ -6,7 +6,18 @@
     "outDir": "./out-tsc/spec",
     "types": [
       "jasmine"
-    ]
+    ],
+    "baseUrl": "./",
+    "paths": {
+      "@core/services": ["src/app/core/services"],
+      "@core/components": ["src/app/core/components"],
+      "@core/directives": ["src/app/core/directives"],
+      "@core/guards": ["src/app/core/guards"],
+      "@core/models": ["src/app/core/models"],
+      "@core/pipes": ["src/app/core/pipes"],
+      "@core/interceptors": ["src/app/core/interceptors"],
+      "@libs/filters-module": ["src/app/libs/filters-module"]
+    }
   },
   "include": [
     "src/**/*.ts"
