@@ -1,0 +1,89 @@
+<div class="filter-step">
+  <div class="filter-step__header">
+    <div class="filter-step__header-left">
+      <span class="filter-step__number">{{ stepNumber() }}</span>
+      @if (canRemove()) {
+        <button class="filter-step__remove" (click)="onRemove()" type="button">×</button>
+      }
+    </div>
+    <button class="filter-step__add-attribute" (click)="addAttributeFilter()" type="button">
+      + Add Row
+    </button>
+  </div>
+
+  <div class="filter-step__content">
+    @for (attribute of attributeFilters(); track attribute.id; let first = $first) {
+      <div class="filter-step__row">
+        <!-- Event Type (only show in first row) -->
+        <div
+          class="filter-step__field filter-step__field--event"
+          [class.filter-step__field--hidden]="!first"
+        >
+          @if (first) {
+            <label class="filter-step__label">Event</label>
+            <app-select
+              [items]="eventTypeOptions()"
+              [value]="selectedEventType()"
+              placeholder="Event type..."
+              (valueChange)="onEventTypeChange($event)"
+            >
+            </app-select>
+          }
+        </div>
+
+        <!-- Property -->
+        <div class="filter-step__field" [class.filter-step__field--hidden]="!selectedEventType()">
+          <label class="filter-step__label">Attribute</label>
+          <app-select
+            [items]="propertyOptions()"
+            [value]="attribute.property"
+            (valueChange)="updateAttributeProperty(attribute.id, $event)"
+            placeholder="Property..."
+          >
+          </app-select>
+        </div>
+
+        <!-- Operator -->
+        <div class="filter-step__field" [class.filter-step__field--hidden]="!attribute.property">
+          <label class="filter-step__label">Operator</label>
+          <app-select
+            [items]="operatorOptionsMap().get(attribute.id) || []"
+            [value]="attribute.operator"
+            (valueChange)="updateAttributeOperator(attribute.id, $event)"
+            placeholder="Operator..."
+          >
+          </app-select>
+        </div>
+
+        <!-- Value -->
+        <div
+          class="filter-step__field filter-step__field--value"
+          [class.filter-step__field--hidden]="!attribute.operator"
+        >
+          <label class="filter-step__label">Value</label>
+          <input
+            type="text"
+            class="filter-step__input"
+            [value]="attribute.value || ''"
+            (input)="onValueChange(attribute.id, $event)"
+            placeholder="Value..."
+          />
+        </div>
+
+        <!-- Remove Button -->
+        <div class="filter-step__field filter-step__field--action">
+          @if (attributeFilters().length > 1) {
+            <button
+              class="filter-step__remove-row"
+              (click)="removeAttributeFilter(attribute.id)"
+              type="button"
+              title="Remove row"
+            >
+              ×
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

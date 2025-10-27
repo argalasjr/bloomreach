@@ -1,5 +1,5 @@
 export * from './models';
 export * from './services';
-export * from './containers';
+export * from './components';
 
 export * from './filters-module';

@@ -1,0 +1,60 @@
+<div [class]="cssClass()">
+  <ng-select
+    [(ngModel)]="value"
+    [items]="items()"
+    [bindLabel]="bindLabel()"
+    [bindValue]="bindValue()"
+    [placeholder]="placeholder()"
+    [multiple]="multiple()"
+    [searchable]="searchable()"
+    [clearable]="clearable()"
+    [disabled]="disabled()"
+    [loading]="loading()"
+    [notFoundText]="notFoundText()"
+    [addTagText]="addTagText()"
+    [loadingText]="loadingText()"
+    [closeOnSelect]="closeOnSelect()"
+    [hideSelected]="hideSelected()"
+    [maxSelectedItems]="maxSelectedItems()"
+    [groupBy]="groupBy"
+    [selectOnTab]="selectOnTab()"
+    [dropdownPosition]="dropdownPosition()"
+    [virtualScroll]="virtualScroll()"
+    [addTag]="addTag()"
+    [minTermLength]="minTermLength()"
+    [typeToSearchText]="typeToSearchText()"
+    [searchFn]="customSearchFn"
+    [compareWith]="compareWith"
+    (change)="onChange($event)"
+    (open)="onOpen()"
+    (close)="onClose()"
+    (clear)="onClear()"
+    (search)="onSearch($event)"
+    (add)="onAdd($event)"
+    (remove)="onRemove($event)"
+  >
+    <!-- Custom label template (optional) -->
+    <ng-template ng-label-tmp let-item="item">
+      <span class="app-select__label">{{ item[bindLabel()] }}</span>
+    </ng-template>
+
+    <!-- Custom option template (optional) -->
+    <ng-template ng-option-tmp let-item="item" let-index="index" let-search="searchTerm">
+      <div class="app-select__option">
+        <span>{{ item[bindLabel()] }}</span>
+      </div>
+    </ng-template>
+
+    <!-- Custom multi-label template (optional) -->
+    @if (multiple()) {
+      <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+        <div class="app-select__multi-label">
+          <span class="app-select__multi-count">{{ items.length }} selected</span>
+          @if (clearable()) {
+            <span class="app-select__multi-clear" (click)="clear()">×</span>
+          }
+        </div>
+      </ng-template>
+    }
+  </ng-select>
+</div>

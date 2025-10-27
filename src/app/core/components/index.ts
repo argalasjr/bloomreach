@@ -1,2 +1,1 @@
-// Export all components here
-export {};
+export * from './select/select.component';

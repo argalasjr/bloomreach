@@ -1,0 +1,227 @@
+.filter-step {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  &__header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__number {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  &__remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background-color: #fee2e2;
+    color: #dc2626;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.25rem;
+    line-height: 1;
+
+    &:hover {
+      background-color: #fecaca;
+    }
+  }
+
+  &__add-attribute {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    background-color: white;
+    color: #007bff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #007bff;
+      color: white;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1.5fr 2fr 40px;
+    gap: 0.75rem;
+    align-items: end;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+
+    &--hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    &--event {
+      grid-column: 1;
+    }
+
+    &--value {
+      grid-column: 4;
+    }
+
+    &--action {
+      grid-column: 5;
+      display: flex;
+      align-items: flex-end;
+      padding-bottom: 0.25rem;
+      justify-content: center;
+    }
+  }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.125rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__input {
+    width: 100%;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    }
+
+    &::placeholder {
+      color: #9ca3af;
+    }
+  }
+
+  &__remove-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background-color: #fee2e2;
+    color: #dc2626;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.125rem;
+    line-height: 1;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: #fecaca;
+    }
+  }
+}
+
+// Make select component smaller
+::ng-deep {
+  .filter-step {
+    .ng-select {
+      .ng-select-container {
+        min-height: 36px;
+        max-height: 36px;
+        font-size: 0.875rem;
+
+        .ng-value-container {
+          padding: 0 8px;
+
+          .ng-value {
+            font-size: 0.75rem;
+            padding: 1px 6px;
+          }
+
+          .ng-input {
+            input {
+              font-size: 0.875rem;
+            }
+          }
+
+          .ng-placeholder {
+            font-size: 0.875rem;
+          }
+        }
+
+        .ng-arrow-wrapper {
+          padding-right: 8px;
+
+          .ng-arrow {
+            border-width: 5px 5px 2px;
+          }
+        }
+
+        .ng-clear-wrapper {
+          padding-right: 6px;
+        }
+      }
+
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .filter-step {
+    &__row {
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+    }
+
+    &__field {
+      &--spacer {
+        display: none;
+      }
+
+      &--action {
+        justify-self: end;
+      }
+    }
+  }
+}
