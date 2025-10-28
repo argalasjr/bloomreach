@@ -6,9 +6,10 @@ A reusable, signal-based select/multiselect component built with ng-select.
 
 - ✅ Single & Multi-select
 - ✅ Full-text search
-- ✅ Signal-based (Angular 20+)
-- ✅ Two-way binding with `model()`
-- ✅ Custom templates
+- ✅ Signal-based (Angular 21+)
+- ✅ Two-way binding with signals
+- ✅ **ControlValueAccessor** for Angular Forms (Reactive & Template-driven)
+- ✅ Custom header templates
 - ✅ Virtual scrolling
 - ✅ Grouping support
 - ✅ Add custom tags
@@ -257,17 +258,208 @@ export class ExampleComponent {
 | `addItem` | `T` | Emitted when item added |
 | `removeItem` | `T` | Emitted when item removed |
 
-## Two-way Binding
+## Forms Integration
 
-Use `[(value)]` for two-way binding:
+### Reactive Forms (Recommended)
+
+The component implements `ControlValueAccessor` and works seamlessly with Angular Reactive Forms:
 
 ```typescript
-selectedValue = signal<number | null>(null);
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { SelectComponent, SelectOption } from '@core/components';
 
-// Template
-<app-select [(value)]="selectedValue" [items]="items()"></app-select>
+@Component({
+  selector: 'app-user-form',
+  imports: [ReactiveFormsModule, SelectComponent],
+  template: `
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <div>
+        <label>Country</label>
+        <app-select
+          formControlName="country"
+          [items]="countries()"
+          placeholder="Select a country">
+        </app-select>
+        @if (userForm.get('country')?.invalid && userForm.get('country')?.touched) {
+          <span class="error">Country is required</span>
+        }
+      </div>
 
-// The signal will automatically update when selection changes
+      <div>
+        <label>Skills</label>
+        <app-select
+          formControlName="skills"
+          [items]="skills()"
+          [multiple]="true"
+          placeholder="Select skills">
+        </app-select>
+      </div>
+
+      <button type="submit" [disabled]="userForm.invalid">Submit</button>
+    </form>
+  `
+})
+export class UserFormComponent {
+  countries = signal<SelectOption[]>([
+    { label: 'United States', value: 'us' },
+    { label: 'United Kingdom', value: 'uk' },
+    { label: 'Canada', value: 'ca' }
+  ]);
+
+  skills = signal<SelectOption[]>([
+    { label: 'Angular', value: 'angular' },
+    { label: 'TypeScript', value: 'typescript' },
+    { label: 'RxJS', value: 'rxjs' }
+  ]);
+
+  userForm: FormGroup;
+
+  constructor(private fb: FormBuilder) {
+    this.userForm = this.fb.group({
+      country: [null, Validators.required],
+      skills: [[], Validators.minLength(1)]
+    });
+  }
+
+  onSubmit() {
+    if (this.userForm.valid) {
+      console.log(this.userForm.value);
+    }
+  }
+}
+```
+
+### Template-Driven Forms
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { SelectComponent, SelectOption } from '@core/components';
+
+@Component({
+  selector: 'app-simple-form',
+  imports: [FormsModule, SelectComponent],
+  template: `
+    <form #form="ngForm" (ngSubmit)="onSubmit()">
+      <div>
+        <label>Category</label>
+        <app-select
+          [(ngModel)]="formData.category"
+          name="category"
+          [items]="categories()"
+          required
+          placeholder="Select category">
+        </app-select>
+      </div>
+
+      <button type="submit" [disabled]="form.invalid">Submit</button>
+    </form>
+  `
+})
+export class SimpleFormComponent {
+  categories = signal<SelectOption[]>([
+    { label: 'Technology', value: 'tech' },
+    { label: 'Business', value: 'business' },
+    { label: 'Science', value: 'science' }
+  ]);
+
+  formData = {
+    category: null
+  };
+
+  onSubmit() {
+    console.log(this.formData);
+  }
+}
+```
+
+### Programmatic Value Setting
+
+```typescript
+import { Component, OnInit } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-example',
+  imports: [ReactiveFormsModule, SelectComponent],
+  template: `
+    <app-select
+      [formControl]="cityControl"
+      [items]="cities()">
+    </app-select>
+
+    <button (click)="selectNewYork()">Select New York</button>
+    <button (click)="clearSelection()">Clear</button>
+    <button (click)="disableSelect()">Disable</button>
+  `
+})
+export class ExampleComponent implements OnInit {
+  cityControl = new FormControl<number | null>(null);
+
+  cities = signal<SelectOption[]>([
+    { label: 'New York', value: 1 },
+    { label: 'Los Angeles', value: 2 },
+    { label: 'Chicago', value: 3 }
+  ]);
+
+  ngOnInit() {
+    // Listen to value changes
+    this.cityControl.valueChanges.subscribe(value => {
+      console.log('City changed:', value);
+    });
+  }
+
+  selectNewYork() {
+    this.cityControl.setValue(1);
+  }
+
+  clearSelection() {
+    this.cityControl.setValue(null);
+  }
+
+  disableSelect() {
+    this.cityControl.disable();
+  }
+}
+```
+
+### With Custom Header Template
+
+```typescript
+import { Component, signal } from '@angular/core';
+import { SelectComponent, SelectOption } from '@core/components';
+
+@Component({
+  selector: 'app-operator-select',
+  imports: [SelectComponent],
+  template: `
+    <app-select
+      [items]="operators()"
+      [(ngModel)]="selectedOperator"
+      [headerTemplate]="propertyType() ? headerTpl : null"
+      placeholder="Select operator">
+    </app-select>
+
+    <ng-template #headerTpl>
+      <div class="operator-header">
+        <span>Property Type:</span>
+        <strong>{{ propertyType() }}</strong>
+      </div>
+    </ng-template>
+  `
+})
+export class OperatorSelectComponent {
+  propertyType = signal<string>('number');
+
+  operators = signal<SelectOption[]>([
+    { label: 'Equal to', value: 'equals' },
+    { label: 'Greater than', value: 'gt' },
+    { label: 'Less than', value: 'lt' }
+  ]);
+
+  selectedOperator = signal<string | null>(null);
+}
 ```
 
 ## TypeScript Generics

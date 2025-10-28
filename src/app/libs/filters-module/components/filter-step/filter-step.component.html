@@ -1,19 +1,46 @@
 <div class="filter-step">
   <div class="filter-step__header">
     <div class="filter-step__header-left">
-      <span class="filter-step__number">{{ stepNumber() }}</span>
-      @if (canRemove()) {
-        <button class="filter-step__remove" (click)="onRemove()" type="button">×</button>
+      <span class="filter-step__number">Step {{ stepNumber() }}</span>
+      @if (selectedEventType()) {
+        <span class="filter-step__event-name">{{ selectedEventType()?.label || '' }}</span>
       }
     </div>
-    <button class="filter-step__add-attribute" (click)="addAttributeFilter()" type="button">
-      + Add Row
-    </button>
+    @if (isComplete()) {
+      <div class="filter-step__header-actions">
+        <button
+          class="filter-step__action filter-step__action--duplicate"
+          (click)="onDuplicate()"
+          type="button"
+          title="Duplicate step"
+        >
+          <span class="filter-step__action-icon">⎘</span>
+        </button>
+        @if (canRemove()) {
+          <button
+            class="filter-step__action filter-step__action--delete"
+            (click)="onRemove()"
+            type="button"
+            title="Delete step"
+          >
+            <span class="filter-step__action-icon">🗑</span>
+          </button>
+        }
+      </div>
+    }
   </div>
 
-  <div class="filter-step__content">
-    @for (attribute of attributeFilters(); track attribute.id; let first = $first) {
-      <div class="filter-step__row">
+  <div
+    class="filter-step__content"
+    [class.filter-step__content--has-attributes]="selectedEventType()"
+  >
+    @for (
+      attribute of attributeFilters();
+      track attribute.id;
+      let first = $first;
+      let last = $last
+    ) {
+      <div class="filter-step__row" [class.filter-step__row--last]="last">
         <!-- Event Type (only show in first row) -->
         <div
           class="filter-step__field filter-step__field--event"
@@ -32,7 +59,10 @@
         </div>
 
         <!-- Property -->
-        <div class="filter-step__field" [class.filter-step__field--hidden]="!selectedEventType()">
+        <div
+          class="filter-step__field filter-step__field--property"
+          [class.filter-step__field--hidden]="!selectedEventType()"
+        >
           <label class="filter-step__label">Attribute</label>
           <app-select
             [items]="propertyOptions()"
@@ -41,6 +71,11 @@
             placeholder="Property..."
           >
           </app-select>
+          @if (last && attribute.property) {
+            <button class="filter-step__add-attribute" (click)="addAttributeFilter()" type="button">
+              + Add Row
+            </button>
+          }
         </div>
 
         <!-- Operator -->
@@ -50,25 +85,62 @@
             [items]="operatorOptionsMap().get(attribute.id) || []"
             [value]="attribute.operator"
             (valueChange)="updateAttributeOperator(attribute.id, $event)"
+            [headerTemplate]="propertyTypeMap().get(attribute.id) ? operatorHeader : null"
             placeholder="Operator..."
           >
           </app-select>
+
+          <!-- Template for operator header -->
+          <ng-template #operatorHeader>
+            <div class="filter-step__operator-header">
+              <span class="filter-step__operator-header-label">Property Type:</span>
+              <span class="filter-step__operator-header-type">{{
+                propertyTypeMap().get(attribute.id)
+              }}</span>
+            </div>
+          </ng-template>
         </div>
 
-        <!-- Value -->
-        <div
-          class="filter-step__field filter-step__field--value"
-          [class.filter-step__field--hidden]="!attribute.operator"
-        >
-          <label class="filter-step__label">Value</label>
-          <input
-            type="text"
-            class="filter-step__input"
-            [value]="attribute.value || ''"
-            (input)="onValueChange(attribute.id, $event)"
-            placeholder="Value..."
-          />
-        </div>
+        <!-- Value (for non-between operators) -->
+        @if (attribute.operator && attribute.operator !== 'between') {
+          <div class="filter-step__field filter-step__field--value">
+            <label class="filter-step__label">Value</label>
+            <input
+              [type]="propertyTypeMap().get(attribute.id) || 'text'"
+              class="filter-step__input"
+              [value]="attribute.value || ''"
+              (input)="onValueChange(attribute.id, $event)"
+              placeholder="Value..."
+            />
+          </div>
+        }
+
+        <!-- Value Range (for between operator) -->
+        @if (attribute.operator === 'between') {
+          <div class="row-between">
+            <div class="filter-step__field filter-step__field--value-range">
+              <label class="filter-step__label">From</label>
+              <input
+                type="number"
+                class="filter-step__input"
+                [value]="attribute.valueFrom || ''"
+                (input)="onValueFromChange(attribute.id, $event)"
+                placeholder="From..."
+              />
+            </div>
+            <div>and</div>
+            <div class="filter-step__field filter-step__field--value-range">
+              <label class="filter-step__label">To</label>
+              <input
+                type="number"
+                class="filter-step__input"
+                [value]="attribute.valueTo || ''"
+                (input)="onValueToChange(attribute.id, $event)"
+                placeholder="To..."
+              />
+            </div>
+          </div>
+        }
 
         <!-- Remove Button -->
         <div class="filter-step__field filter-step__field--action">

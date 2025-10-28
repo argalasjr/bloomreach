@@ -1,6 +1,7 @@
-import { Component, input, output, model, signal, computed } from '@angular/core';
+import { Component, input, output, model, signal, computed, TemplateRef } from '@angular/core';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 export interface SelectOption<T = any> {
   label: string;
@@ -14,13 +15,14 @@ export type SelectPosition = 'auto' | 'top' | 'bottom';
 
 @Component({
   selector: 'app-select',
-  imports: [NgSelectModule, FormsModule],
+  imports: [NgSelectModule, FormsModule, CommonModule],
   templateUrl: './select.component.html',
   styleUrl: './select.component.scss',
 })
 export class SelectComponent<T = any> {
   // Inputs
   readonly items = input<SelectOption<T>[]>([]);
+  readonly headerTemplate = input<TemplateRef<any> | null>(null);
   readonly placeholder = input<string>('Select option');
   readonly multiple = input<boolean>(false);
   readonly searchable = input<boolean>(true);

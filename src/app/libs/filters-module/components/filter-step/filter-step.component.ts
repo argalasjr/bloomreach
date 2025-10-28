@@ -1,22 +1,25 @@
 import { Component, input, output, computed, signal, model } from '@angular/core';
 import { SelectComponent, SelectOption } from '@core/components';
 import { EventType } from '../../models';
+import { CommonModule } from '@angular/common';
 
 export interface AttributeFilter {
   id: number;
   property: string | null;
   operator: string | null;
   value: string | null;
+  valueFrom?: string | null; // For "between" operator
+  valueTo?: string | null; // For "between" operator
 }
 
 export interface FilterStepValue {
-  eventType: string | null;
+  eventType: SelectOption<string> | null;
   attributeFilters: AttributeFilter[];
 }
 
 @Component({
   selector: 'app-filter-step',
-  imports: [SelectComponent],
+  imports: [CommonModule, SelectComponent],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
 })
@@ -34,10 +37,29 @@ export class FilterStepComponent {
 
   // Outputs
   readonly remove = output<void>();
+  readonly duplicate = output<void>();
 
   // Internal state - derived from value model
   readonly selectedEventType = computed(() => this.value().eventType);
   readonly attributeFilters = computed(() => this.value().attributeFilters);
+
+  /**
+   * Check if the step is complete (has all required values)
+   */
+  readonly isComplete = computed(() => {
+    const eventType = this.selectedEventType();
+    if (!eventType) return false;
+
+    return this.attributeFilters().some((attr) => {
+      if (!attr.property || !attr.operator) return false;
+      // For "between" operator, check valueFrom and valueTo
+      if (attr.operator === 'between') {
+        return !!(attr.valueFrom && attr.valueTo);
+      }
+      // For other operators, check value
+      return !!attr.value;
+    });
+  });
 
   private nextAttributeId = signal(2);
 
@@ -58,12 +80,8 @@ export class FilterStepComponent {
     const eventType = this.selectedEventType();
     if (!eventType) return [];
 
-    console.log('eventTypes', this.eventTypes());
-    console.log('eventType', eventType);
-
-    const event = this.eventTypes().find((event: EventType) => event.type === eventType);
+    const event = this.eventTypes().find((event: EventType) => event.type === eventType.value);
     if (!event) return [];
-    console.log('event', event);
 
     return event.properties.map((property) => ({
       label: this.formatPropertyName(property.property),
@@ -79,7 +97,7 @@ export class FilterStepComponent {
     const eventType = this.selectedEventType();
     if (!eventType) return new Map();
 
-    const event = this.eventTypes().find((e) => e.type === eventType);
+    const event = this.eventTypes().find((e) => e.type === eventType.value);
     if (!event) return new Map();
 
     const optionsMap = new Map<number, SelectOption[]>();
@@ -106,11 +124,10 @@ export class FilterStepComponent {
         ]);
       } else if (prop.type === 'number') {
         optionsMap.set(attribute.id, [
-          { label: 'Equals', value: 'equals' },
-          { label: 'Greater than', value: 'greater_than' },
+          { label: 'Equal to', value: 'equals' },
           { label: 'Less than', value: 'less_than' },
-          { label: 'Between', value: 'between' },
-          { label: 'Not equals', value: 'not_equals' },
+          { label: 'Greater than', value: 'greater_than' },
+          { label: 'In between', value: 'between' },
         ]);
       } else {
         optionsMap.set(attribute.id, []);
@@ -121,14 +138,29 @@ export class FilterStepComponent {
   });
 
   /**
-   * Update event type in model
+   * Computed map of property types for each attribute
    */
-  private updateEventType(eventType: string | null): void {
-    this.value.update((current) => ({
-      ...current,
-      eventType,
-    }));
-  }
+  readonly propertyTypeMap = computed<Map<number, string>>(() => {
+    const eventType = this.selectedEventType();
+    if (!eventType) return new Map();
+
+    const event = this.eventTypes().find((e) => e.type === eventType.value);
+    if (!event) return new Map();
+
+    const typeMap = new Map<number, string>();
+
+    this.attributeFilters().forEach((attribute) => {
+      if (!attribute.property) {
+        typeMap.set(attribute.id, 'string');
+        return;
+      }
+
+      const prop = event.properties.find((p) => p.property === attribute.property);
+      typeMap.set(attribute.id, prop?.type === 'number' ? 'number' : 'string');
+    });
+
+    return typeMap;
+  });
 
   /**
    * Update attribute filters in model
@@ -167,7 +199,7 @@ export class FilterStepComponent {
     // Reset all attribute filters when event type changes
     const newId = this.nextAttributeId();
     this.value.set({
-      eventType: eventType?.value || null,
+      eventType: eventType || null,
       attributeFilters: [{ id: newId, property: null, operator: null, value: null }],
     });
     this.nextAttributeId.update((id) => id + 1);
@@ -187,7 +219,9 @@ export class FilterStepComponent {
    */
   onOperatorChange(attributeId: number): void {
     this.updateAttributeFilters((filters) =>
-      filters.map((f) => (f.id === attributeId ? { ...f, value: null } : f)),
+      filters.map((f) =>
+        f.id === attributeId ? { ...f, value: null, valueFrom: null, valueTo: null } : f,
+      ),
     );
   }
 
@@ -202,12 +236,34 @@ export class FilterStepComponent {
   }
 
   /**
+   * Handle "from" value change for "between" operator
+   */
+  onValueFromChange(attributeId: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.updateAttributeFilters((filters) =>
+      filters.map((f) => (f.id === attributeId ? { ...f, valueFrom: input.value || null } : f)),
+    );
+  }
+
+  /**
+   * Handle "to" value change for "between" operator
+   */
+  onValueToChange(attributeId: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.updateAttributeFilters((filters) =>
+      filters.map((f) => (f.id === attributeId ? { ...f, valueTo: input.value || null } : f)),
+    );
+  }
+
+  /**
    * Update attribute property
    */
   updateAttributeProperty(attributeId: number, property: SelectOption<string> | null): void {
     this.updateAttributeFilters((filters) =>
       filters.map((f) =>
-        f.id === attributeId ? { ...f, property: property?.value || null, operator: null, value: null } : f,
+        f.id === attributeId
+          ? { ...f, property: property?.value || null, operator: null, value: null }
+          : f,
       ),
     );
   }
@@ -215,9 +271,19 @@ export class FilterStepComponent {
   /**
    * Update attribute operator
    */
-  updateAttributeOperator(attributeId: number, operator: string | null): void {
+  updateAttributeOperator(attributeId: number, operator: SelectOption<string> | null): void {
     this.updateAttributeFilters((filters) =>
-      filters.map((f) => (f.id === attributeId ? { ...f, operator, value: null } : f)),
+      filters.map((f) =>
+        f.id === attributeId
+          ? {
+              ...f,
+              operator: operator?.value || null,
+              value: null,
+              valueFrom: null,
+              valueTo: null,
+            }
+          : f,
+      ),
     );
   }
 
@@ -275,5 +341,12 @@ export class FilterStepComponent {
    */
   onRemove(): void {
     this.remove.emit();
+  }
+
+  /**
+   * Handle duplicate button click
+   */
+  onDuplicate(): void {
+    this.duplicate.emit();
   }
 }

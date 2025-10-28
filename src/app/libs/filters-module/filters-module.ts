@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FiltersFacadeService } from './services/filters-facade.service';
 import { FilterStepComponent } from './components';
 import type { FilterStepValue } from './components';
+import { CommonModule } from '@angular/common';
 
 interface FilterStep {
   id: number;
@@ -11,7 +12,7 @@ interface FilterStep {
 
 @Component({
   selector: 'app-filters-module',
-  imports: [FilterStepComponent],
+  imports: [CommonModule, FilterStepComponent],
   templateUrl: './filters-module.html',
   styleUrl: './filters-module.scss',
 })
@@ -39,6 +40,11 @@ export class FiltersModuleComponent {
   readonly filterSteps = signal<FilterStep[]>([{ id: 1, value: this.getEmptyFilterValue() }]);
 
   /**
+   * Applied filters (only updates when user clicks "Apply Filters")
+   */
+  readonly appliedFilters = signal<FilterStep[]>([]);
+
+  /**
    * Next filter step ID
    */
   private nextId = signal(2);
@@ -52,24 +58,31 @@ export class FiltersModuleComponent {
   });
 
   /**
-   * Computed active filters
+   * Get active filters from current filterSteps state
+   * This is a method, not a computed, so it reads fresh data when called
    */
-  readonly activeFilters = computed(() => {
+  getActiveFilters(): FilterStep[] {
     return this.filterSteps().filter((step) => {
       if (!step.value.eventType) return false;
-      return step.value.attributeFilters.some(
-        (attr) => attr.property && attr.operator && attr.value,
-      );
+      return step.value.attributeFilters.some((attr) => {
+        if (!attr.property || !attr.operator) return false;
+        // For "between" operator, check valueFrom and valueTo
+        if (attr.operator === 'between') {
+          return !!(attr.valueFrom && attr.valueTo);
+        }
+        // For other operators, check value
+        return !!attr.value;
+      });
     });
-  });
+  }
 
   /**
-   * Computed filter summary
+   * Computed filter summary (based on applied filters)
    */
   readonly filterSummary = computed(() => {
-    const active = this.activeFilters();
-    if (active.length === 0) return 'No active filters';
-    return `${active.length} active filter${active.length > 1 ? 's' : ''}`;
+    const applied = this.appliedFilters();
+    if (applied.length === 0) return 'No active filters';
+    return `${applied.length} active filter${applied.length > 1 ? 's' : ''}`;
   });
 
   /**
@@ -102,21 +115,49 @@ export class FiltersModuleComponent {
   }
 
   /**
-   * Handle filter step value change
+   * Duplicate a filter step
    */
-  onFilterStepChange(id: number, value: FilterStepValue): void {
-    this.filterSteps.update((steps) =>
-      steps.map((step) => (step.id === id ? { ...step, value } : step)),
-    );
+  duplicateFilterStep(id: number): void {
+    const stepToDuplicate = this.filterSteps().find((step) => step.id === id);
+    if (!stepToDuplicate) return;
+
+    const newStep: FilterStep = {
+      id: this.nextId(),
+      value: {
+        eventType: stepToDuplicate.value.eventType,
+        attributeFilters: stepToDuplicate.value.attributeFilters.map((attr) => ({
+          ...attr,
+          id: Math.random(), // Generate new IDs for duplicated filters
+        })),
+      },
+    };
+
+    // Find the index of the step to duplicate and insert after it
+    const index = this.filterSteps().findIndex((step) => step.id === id);
+    this.filterSteps.update((steps) => [
+      ...steps.slice(0, index + 1),
+      newStep,
+      ...steps.slice(index + 1),
+    ]);
+    this.nextId.update((id) => id + 1);
   }
 
   /**
-   * Apply filters
+   * Apply filters - computes active filters from current state and stores them
    */
   applyFilters(): void {
-    const active = this.activeFilters();
+    const active = this.getActiveFilters();
+    // Update applied filters - this will trigger display
+    this.appliedFilters.set(active);
     console.log('Applying filters:', active);
     // TODO: Implement filter application logic
+  }
+
+  /**
+   * Remove an applied filter
+   */
+  removeAppliedFilter(id: number): void {
+    this.appliedFilters.update((filters) => filters.filter((filter) => filter.id !== id));
   }
 
   /**
@@ -124,6 +165,7 @@ export class FiltersModuleComponent {
    */
   clearAllFilters(): void {
     this.filterSteps.set([{ id: 1, value: this.getEmptyFilterValue() }]);
+    this.appliedFilters.set([]);
     this.nextId.set(2);
   }
 

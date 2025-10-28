@@ -5,11 +5,7 @@
       <span class="filters-container__summary">{{ filterSummary() }}</span>
     </div>
     <div class="filters-container__actions">
-      <button class="btn btn--secondary" (click)="refreshEvents()" [disabled]="isLoading()">
-        {{ isLoading() ? 'Loading...' : 'Refresh Events' }}
-      </button>
-      <button class="btn btn--danger" (click)="clearAllFilters()">Clear All</button>
-      <button class="btn btn--primary" (click)="applyFilters()">Apply Filters</button>
+      <button class="btn btn--danger" (click)="clearAllFilters()">Discard Filters</button>
     </div>
   </div>
 
@@ -35,10 +31,10 @@
           <app-filter-step
             [eventTypes]="eventTypes()"
             [stepNumber]="i + 1"
-            [canRemove]="filterSteps().length > 1"
-            [value]="step.value"
-            (valueChange)="onFilterStepChange(step.id, $event)"
+            [canRemove]="filterSteps().length > 0"
+            [(value)]="step.value"
             (remove)="removeFilterStep(step.id)"
+            (duplicate)="duplicateFilterStep(step.id)"
           >
           </app-filter-step>
         }
@@ -48,28 +44,35 @@
       <div class="filters-container__add-section">
         <button class="btn btn--outline" (click)="addFilterStep()">
           <span class="btn__icon">+</span>
-          Add Filter Step
+          Add Funnel Step
         </button>
       </div>
 
-      <!-- Active Filters Summary -->
-      @if (activeFilters().length > 0) {
+      <button class="btn btn--primary w-20" (click)="applyFilters()">Apply Filters</button>
+
+      <!-- Applied Filters Summary -->
+      @if (appliedFilters().length > 0) {
         <div class="filters-container__active">
-          <h3>Active Filters</h3>
+          <h3>Applied Filters</h3>
           <div class="filters-container__active-list">
-            @for (filter of activeFilters(); track filter.id) {
+            @for (filter of appliedFilters(); track filter.id) {
               @for (attr of filter.value.attributeFilters; track attr.id) {
-                @if (attr.property && attr.operator && attr.value) {
+                @if (attr.property && attr.operator) {
                   <div class="filter-tag">
                     <span class="filter-tag__content">
-                      <strong>{{ filter.value.eventType }}</strong> →
+                      <strong>{{ filter.value.eventType?.label || filter.value.eventType }}</strong>
+                      →
                       {{ attr.property }}
                       {{ attr.operator }}
-                      "{{ attr.value }}"
+                      @if (attr.operator === 'between') {
+                        "{{ attr.valueFrom }}" to "{{ attr.valueTo }}"
+                      } @else {
+                        "{{ attr.value }}"
+                      }
                     </span>
                     <button
                       class="filter-tag__remove"
-                      (click)="removeFilterStep(filter.id)"
+                      (click)="removeAppliedFilter(filter.id)"
                       type="button"
                     >
                       ×
@@ -81,6 +84,8 @@
           </div>
         </div>
       }
+      <pre>appliedFilters: {{ appliedFilters() | json }}</pre>
+      <pre>filterSteps: {{ filterSteps() | json }}</pre>
     </div>
   }
 </div>
