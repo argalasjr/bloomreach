@@ -128,26 +128,25 @@
     flex-direction: column;
     gap: 0.25rem;
     min-width: 0;
-    max-width: 400px;
-    flex: 1 1 auto;
 
     &--hidden {
       visibility: hidden;
       pointer-events: none;
+      flex-shrink: 0;
     }
 
     &--event {
-      flex: 2 1 0;
+      flex: 0 0 250px;
     }
 
     &--property {
       position: relative;
-      flex: 1 1 auto;
+      flex: 0 0 250px;
     }
 
     &--value,
     &--value-range {
-      flex: 2 1 0;
+      flex: 1 1 200px;
     }
 
     &--action {
