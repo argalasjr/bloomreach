@@ -60,6 +60,28 @@
         color: var(--color-white);
       }
     }
+
+    &--text {
+      background-color: transparent;
+      color: var(--color-primary);
+      border: none;
+      padding: 0.5rem 0.75rem;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-background-lighter);
+        transform: none;
+        box-shadow: none;
+      }
+
+      &:active:not(:disabled) {
+        background-color: var(--color-border);
+      }
+    }
+
+    &--sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
   
     &__icon {
       font-size: 1.25rem;

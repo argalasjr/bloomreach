@@ -1,43 +1,100 @@
 <div [class]="cssClass()">
-  <ng-select
-    [ngModel]="value()"
-    (change)="onValueChange($event)"
-    [items]="filteredItems()"
-    [bindLabel]="bindLabel()"
-    [bindValue]="bindValue()"
-    [placeholder]="placeholder()"
-    [fixedPlaceholder]="false"
-    [multiple]="multiple()"
-    [searchable]="false"
-    [clearable]="clearable()"
-    [disabled]="disabled()"
-    [loading]="loading()"
-    [notFoundText]="notFoundText()"
-    [addTagText]="addTagText()"
-    [loadingText]="loadingText()"
-    [closeOnSelect]="closeOnSelect()"
-    [hideSelected]="hideSelected()"
-    [maxSelectedItems]="maxSelectedItems()"
-    [groupBy]="groupBy"
-    [selectOnTab]="selectOnTab()"
-    [dropdownPosition]="dropdownPosition()"
-    [virtualScroll]="virtualScroll()"
-    [addTag]="addTag()"
-    [minTermLength]="minTermLength()"
-    [typeToSearchText]="typeToSearchText()"
-    [searchFn]="customSearchFn"
-    [compareWith]="compareWith"
-    (open)="onOpen()"
-    (close)="onClose()"
-    (clear)="onClear()"
-    (search)="onSearch($event)"
-    (add)="onAdd($event)"
-    (remove)="onRemove($event)"
-  >
-    <!-- Search input in header (when searchable) -->
-    @if (searchable() && !headerTemplate()) {
-      <ng-template ng-header-tmp>
-        @if (hasTabs()) {
+  <div class="app-select__wrapper">
+    <ng-select
+      [ngModel]="value()"
+      (change)="onValueChange($event)"
+      [items]="filteredItems()"
+      [bindLabel]="bindLabel()"
+      [bindValue]="bindValue()"
+      [placeholder]="placeholder()"
+      [fixedPlaceholder]="false"
+      [multiple]="multiple()"
+      [searchable]="false"
+      [clearable]="false"
+      [disabled]="disabled()"
+      [loading]="loading()"
+      [notFoundText]="notFoundText()"
+      [addTagText]="addTagText()"
+      [loadingText]="loadingText()"
+      [closeOnSelect]="closeOnSelect()"
+      [hideSelected]="hideSelected()"
+      [maxSelectedItems]="maxSelectedItems()"
+      [groupBy]="groupBy"
+      [selectOnTab]="selectOnTab()"
+      [dropdownPosition]="dropdownPosition()"
+      [virtualScroll]="virtualScroll()"
+      [addTag]="addTag()"
+      [minTermLength]="minTermLength()"
+      [typeToSearchText]="typeToSearchText()"
+      [searchFn]="customSearchFn"
+      [compareWith]="compareWith"
+      (open)="onOpen()"
+      (close)="onClose()"
+      (clear)="onClear()"
+      (search)="onSearch($event)"
+      (add)="onAdd($event)"
+      (remove)="onRemove($event)"
+    >
+      <!-- Search input in header (when searchable) -->
+      @if (searchable() && !headerTemplate()) {
+        <ng-template ng-header-tmp>
+          @if (hasTabs()) {
+            <div class="app-select__tabs">
+              @for (tab of tabs(); track tab.value; let i = $index) {
+                <span
+                  class="app-select__tab"
+                  [class.app-select__tab--active]="activeTabIndex() === i"
+                  (click)="switchTab(i)"
+                >
+                  @if (tab.icon) {
+                    <span class="app-select__tab-icon">{{ tab.icon }}</span>
+                  }
+                  <span class="app-select__tab-label">{{ tab.label }}</span>
+                </span>
+              }
+            </div>
+          }
+          <div class="app-select__search-header">
+            @if (exclusiveOption()) {
+              <span class="app-select__exclusive-label">{{ exclusiveOption()![bindLabel()] }}</span>
+            }
+            <input
+              #searchInput
+              type="text"
+              class="app-select__search-input g-input--borderless"
+              [placeholder]="typeToSearchText()"
+              [value]="searchTerm()"
+              (input)="onSearchInput($event)"
+              (keydown.escape)="clearSearch()"
+            />
+            @if (searchTerm()) {
+              <button type="button" class="app-select__search-clear" (click)="clearSearch()">
+                ×
+              </button>
+            }
+          </div>
+        </ng-template>
+      }
+
+      <!-- Custom header template if provided -->
+      @if (headerTemplate()) {
+        <ng-template ng-header-tmp>
+          <ng-container *ngTemplateOutlet="headerTemplate()!"></ng-container>
+        </ng-template>
+      }
+
+      <!-- Exclusive option only (when not searchable, no custom header, and has exclusive option) -->
+      @if (!searchable() && !headerTemplate() && exclusiveOption() && !hasTabs()) {
+        <ng-template ng-header-tmp>
+          <div class="app-select__exclusive-option">
+            <span class="app-select__exclusive-label">{{ exclusiveOption()![bindLabel()] }}</span>
+          </div>
+        </ng-template>
+      }
+
+      <!-- Tabs header only (when not searchable and no custom header) -->
+      @if (hasTabs() && !searchable() && !headerTemplate()) {
+        <ng-template ng-header-tmp>
           <div class="app-select__tabs">
             @for (tab of tabs(); track tab.value; let i = $index) {
               <span
@@ -52,87 +109,33 @@
               </span>
             }
           </div>
-        }
-        <div class="app-select__search-header">
-          @if (exclusiveOption()) {
-            <span class="app-select__exclusive-label">{{ exclusiveOption()![bindLabel()] }}</span>
-          }
-          <input
-            #searchInput
-            type="text"
-            class="app-select__search-input g-input--borderless"
-            [placeholder]="typeToSearchText()"
-            [value]="searchTerm()"
-            (input)="onSearchInput($event)"
-            (keydown.escape)="clearSearch()"
-          />
-          @if (searchTerm()) {
-            <button type="button" class="app-select__search-clear" (click)="clearSearch()">
-              ×
-            </button>
-          }
+        </ng-template>
+      }
+
+      <!-- Default label template -->
+      <ng-template ng-label-tmp let-item="item">
+        <span class="app-select__label">{{ item[bindLabel()] }}</span>
+      </ng-template>
+
+      <!-- Default option template -->
+      <ng-template ng-option-tmp let-item="item" let-index="index" let-search="searchTerm">
+        <div class="app-select__option">
+          <span>{{ item[bindLabel()] }}</span>
         </div>
       </ng-template>
-    }
 
-    <!-- Custom header template if provided -->
-    @if (headerTemplate()) {
-      <ng-template ng-header-tmp>
-        <ng-container *ngTemplateOutlet="headerTemplate()!"></ng-container>
-      </ng-template>
-    }
-
-    <!-- Exclusive option only (when not searchable, no custom header, and has exclusive option) -->
-    @if (!searchable() && !headerTemplate() && exclusiveOption() && !hasTabs()) {
-      <ng-template ng-header-tmp>
-        <div class="app-select__exclusive-option">
-          <span class="app-select__exclusive-label">{{ exclusiveOption()![bindLabel()] }}</span>
-        </div>
-      </ng-template>
-    }
-
-    <!-- Tabs header only (when not searchable and no custom header) -->
-    @if (hasTabs() && !searchable() && !headerTemplate()) {
-      <ng-template ng-header-tmp>
-        <div class="app-select__tabs">
-          @for (tab of tabs(); track tab.value; let i = $index) {
-            <span
-              class="app-select__tab"
-              [class.app-select__tab--active]="activeTabIndex() === i"
-              (click)="switchTab(i)"
-            >
-              @if (tab.icon) {
-                <span class="app-select__tab-icon">{{ tab.icon }}</span>
-              }
-              <span class="app-select__tab-label">{{ tab.label }}</span>
-            </span>
-          }
-        </div>
-      </ng-template>
-    }
-
-    <!-- Default label template -->
-    <ng-template ng-label-tmp let-item="item">
-      <span class="app-select__label">{{ item[bindLabel()] }}</span>
-    </ng-template>
-
-    <!-- Default option template -->
-    <ng-template ng-option-tmp let-item="item" let-index="index" let-search="searchTerm">
-      <div class="app-select__option">
-        <span>{{ item[bindLabel()] }}</span>
-      </div>
-    </ng-template>
-
-    <!-- Default multi-label template (optional) -->
-    @if (multiple()) {
-      <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
-        <div class="app-select__multi-label">
-          <span class="app-select__multi-count">{{ items.length }} selected</span>
-          @if (clearable()) {
-            <span class="app-select__multi-clear" (click)="clear()">×</span>
-          }
-        </div>
-      </ng-template>
-    }
-  </ng-select>
+      <!-- Default multi-label template (optional) -->
+      @if (multiple()) {
+        <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+          <div class="app-select__multi-label">
+            <span class="app-select__multi-count">{{ items.length }} selected</span>
+            @if (clearable()) {
+              <span class="app-select__multi-clear" (click)="clear()">×</span>
+            }
+          </div>
+        </ng-template>
+      }
+    </ng-select>
+    <span class="app-select__arrow">▼</span>
+  </div>
 </div>
