@@ -27,11 +27,13 @@ export const OPERATOR_TABS: SelectTab<string>[] = [
   {
     label: 'String',
     value: 'string',
+    icon: '🔤',
     items: STRING_OPERATORS,
   },
   {
     label: 'Number',
     value: 'number',
+    icon: '#️⃣',
     items: NUMBER_OPERATORS,
   },
 ];

@@ -1,31 +1,12 @@
 <div class="filter-step">
   <div class="filter-step__header">
     <div class="filter-step__header-left">
-      <span class="filter-step__number">Step {{ stepNumber() }}</span>
-      @if (isEditingName()) {
-        <input
-          #nameInput
-          type="text"
-          class="filter-step__name-input"
-          [value]="nameControl()"
-          (input)="onNameInput($event)"
-          (blur)="finishEditingName()"
-          (keydown)="onNameKeydown($event)"
-          placeholder="Filter name..."
-        />
-      } @else {
-        <div class="filter-step__name-display">
-          <span class="filter-step__name-text">{{ value().name }}</span>
-          <button
-            type="button"
-            class="filter-step__name-edit"
-            (click)="startEditingName()"
-            title="Edit name"
-          >
-            ✏️
-          </button>
-        </div>
-      }
+      <span class="filter-step__number">{{ stepNumber() }}. Step:</span>
+      <app-editable-input
+        [value]="value().name"
+        (valueChange)="onNameChange($event)"
+        placeholder="Filter name..."
+      />
     </div>
     @if (isComplete()) {
       <div class="filter-step__header-actions">
@@ -73,6 +54,8 @@
               [items]="eventTypeOptions()"
               [value]="selectedEventType()"
               placeholder="Event type..."
+              [searchable]="true"
+              [minTermLength]="1"
               (valueChange)="onEventTypeChange($event)"
             >
             </app-select>
@@ -88,8 +71,10 @@
           <app-select
             [items]="propertyOptions()"
             [value]="attribute.property"
+            [exclusiveOption]="selectedEventType()"
             (valueChange)="updateAttributeProperty(attribute.id, $event)"
             placeholder="Property..."
+            [searchable]="true"
           >
           </app-select>
           @if (last && attribute.property) {
@@ -104,6 +89,7 @@
           <div class="filter-step__field">
             <label class="filter-step__label">Operator</label>
             <app-select
+              [searchable]="false"
               [tabs]="attribute.property ? operatorTabs : []"
               [value]="attribute.operator"
               (valueChange)="updateAttributeOperator(attribute.id, $event)"
@@ -140,7 +126,7 @@
               />
             </div>
 
-            <div class="pl-2 pt-1">and</div>
+            <div class="pt-1">and</div>
 
             <div class="filter-step__field filter-step__field--value-range">
               <label class="filter-step__label">To</label>

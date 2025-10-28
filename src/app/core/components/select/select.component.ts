@@ -1,4 +1,14 @@
-import { Component, input, output, model, signal, computed, TemplateRef } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  model,
+  signal,
+  computed,
+  TemplateRef,
+  viewChild,
+  ElementRef,
+} from '@angular/core';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -11,9 +21,13 @@ import { SelectTab, SelectOption, SelectAppearance, SelectPosition } from '@core
   styleUrl: './select.component.scss',
 })
 export class SelectComponent<T = any> {
+  // View children
+  readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+
   // Inputs
   readonly items = input<SelectOption<T>[]>([]);
   readonly tabs = input<SelectTab<T>[]>([]);
+  readonly exclusiveOption = input<SelectOption<T> | null>(null);
   readonly headerTemplate = input<TemplateRef<any> | null>(null);
   readonly placeholder = input<string>('Select option');
   readonly multiple = input<boolean>(false);
@@ -96,9 +110,32 @@ export class SelectComponent<T = any> {
   });
 
   /**
-   * Handle value change event
+   * Get filtered items based on search term
    */
-  onChange(value: SelectOption<T> | SelectOption<T>[] | null): void {
+  readonly filteredItems = computed(() => {
+    const items = this.displayItems();
+    const term = this.searchTerm().toLowerCase().trim();
+
+    if (!term || !this.searchable()) {
+      return items;
+    }
+
+    return items.filter((item) => {
+      const label = item[this.bindLabel()];
+      return label && label.toString().toLowerCase().includes(term);
+    });
+  });
+
+  /**
+   * Handle value change event from ngModelChange
+   */
+  onValueChange(value: SelectOption<T> | SelectOption<T>[] | null): void {
+    // Filter out Event objects (from input elements)
+    if (value instanceof Event) {
+      return;
+    }
+
+    this.value.set(value);
     this.valueChange.emit(value);
   }
 
@@ -117,7 +154,15 @@ export class SelectComponent<T = any> {
    */
   onOpen(): void {
     this.isOpen.set(true);
+    this.searchTerm.set('');
     this.selectOpen.emit();
+
+    // Focus search input if searchable
+    if (this.searchable()) {
+      setTimeout(() => {
+        this.searchInput()?.nativeElement?.focus();
+      }, 0);
+    }
   }
 
   /**
@@ -125,6 +170,7 @@ export class SelectComponent<T = any> {
    */
   onClose(): void {
     this.isOpen.set(false);
+    this.searchTerm.set('');
     this.selectClose.emit();
   }
 
@@ -171,5 +217,20 @@ export class SelectComponent<T = any> {
    */
   compareWith(item1: any, item2: any): boolean {
     return item1 === item2;
+  }
+
+  /**
+   * Handle search input event
+   */
+  onSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchTerm.set(input.value);
+  }
+
+  /**
+   * Clear search term
+   */
+  clearSearch(): void {
+    this.searchTerm.set('');
   }
 }

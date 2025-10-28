@@ -1,14 +1,14 @@
 <div [class]="cssClass()">
   <ng-select
     [ngModel]="value()"
-    (ngModelChange)="value.set($event)"
-    [items]="displayItems()"
+    (change)="onValueChange($event)"
+    [items]="filteredItems()"
     [bindLabel]="bindLabel()"
     [bindValue]="bindValue()"
     [placeholder]="placeholder()"
     [fixedPlaceholder]="false"
     [multiple]="multiple()"
-    [searchable]="searchable()"
+    [searchable]="false"
     [clearable]="clearable()"
     [disabled]="disabled()"
     [loading]="loading()"
@@ -27,7 +27,6 @@
     [typeToSearchText]="typeToSearchText()"
     [searchFn]="customSearchFn"
     [compareWith]="compareWith"
-    (change)="onChange($event)"
     (open)="onOpen()"
     (close)="onClose()"
     (clear)="onClear()"
@@ -35,6 +34,47 @@
     (add)="onAdd($event)"
     (remove)="onRemove($event)"
   >
+    <!-- Search input in header (when searchable) -->
+    @if (searchable() && !headerTemplate()) {
+      <ng-template ng-header-tmp>
+        @if (hasTabs()) {
+          <div class="app-select__tabs">
+            @for (tab of tabs(); track tab.value; let i = $index) {
+              <span
+                class="app-select__tab"
+                [class.app-select__tab--active]="activeTabIndex() === i"
+                (click)="switchTab(i)"
+              >
+                @if (tab.icon) {
+                  <span class="app-select__tab-icon">{{ tab.icon }}</span>
+                }
+                <span class="app-select__tab-label">{{ tab.label }}</span>
+              </span>
+            }
+          </div>
+        }
+        <div class="app-select__search-header">
+          @if (exclusiveOption()) {
+            <span class="app-select__exclusive-label">{{ exclusiveOption()![bindLabel()] }}</span>
+          }
+          <input
+            #searchInput
+            type="text"
+            class="app-select__search-input g-input--borderless"
+            [placeholder]="typeToSearchText()"
+            [value]="searchTerm()"
+            (input)="onSearchInput($event)"
+            (keydown.escape)="clearSearch()"
+          />
+          @if (searchTerm()) {
+            <button type="button" class="app-select__search-clear" (click)="clearSearch()">
+              ×
+            </button>
+          }
+        </div>
+      </ng-template>
+    }
+
     <!-- Custom header template if provided -->
     @if (headerTemplate()) {
       <ng-template ng-header-tmp>
@@ -42,19 +82,30 @@
       </ng-template>
     }
 
-    <!-- Tabs header if tabs are provided -->
-    @if (hasTabs()) {
+    <!-- Exclusive option only (when not searchable, no custom header, and has exclusive option) -->
+    @if (!searchable() && !headerTemplate() && exclusiveOption() && !hasTabs()) {
+      <ng-template ng-header-tmp>
+        <div class="app-select__exclusive-option">
+          <span class="app-select__exclusive-label">{{ exclusiveOption()![bindLabel()] }}</span>
+        </div>
+      </ng-template>
+    }
+
+    <!-- Tabs header only (when not searchable and no custom header) -->
+    @if (hasTabs() && !searchable() && !headerTemplate()) {
       <ng-template ng-header-tmp>
         <div class="app-select__tabs">
           @for (tab of tabs(); track tab.value; let i = $index) {
-            <button
-              type="button"
+            <span
               class="app-select__tab"
               [class.app-select__tab--active]="activeTabIndex() === i"
               (click)="switchTab(i)"
             >
-              {{ tab.label }}
-            </button>
+              @if (tab.icon) {
+                <span class="app-select__tab-icon">{{ tab.icon }}</span>
+              }
+              <span class="app-select__tab-label">{{ tab.label }}</span>
+            </span>
           }
         </div>
       </ng-template>

@@ -9,6 +9,7 @@ export interface SelectTab<T = any> {
   label: string;
   value: string;
   items: SelectOption<T>[];
+  icon?: string;
 }
 
 export type SelectAppearance = 'outline' | 'underline';

@@ -8,7 +8,7 @@
     .ng-select {
       &.ng-select-focused {
         .ng-select-container {
-          border-color: #007bff;
+          border-color: var(--color-primary);
           box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
         }
       }
@@ -16,11 +16,11 @@
       .ng-select-container {
         min-height: 42px;
         border-radius: 6px;
-        border: 1px solid #d1d5db;
+        border: 1px solid var(--color-border-light);
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #9ca3af;
+          border-color: var(--color-gray-400);
         }
 
         .ng-value-container {
@@ -29,12 +29,12 @@
           align-items: center;
 
           .ng-placeholder {
-            color: #9ca3af;
+            color: var(--color-gray-400);
           }
 
           .ng-value {
-            background-color: #007bff;
-            color: white;
+            background-color: var(--color-primary);
+            color: var(--color-white);
             border-radius: 4px;
             padding: 2px 8px;
             margin: 2px 4px 2px 0;
@@ -65,26 +65,26 @@
           align-items: center;
 
           .ng-arrow {
-            border-color: #6b7280 transparent transparent;
+            border-color: var(--color-text-muted) transparent transparent;
             border-width: 6px 6px 2.5px;
           }
         }
 
         .ng-clear-wrapper {
           padding-right: 8px;
-          color: #9ca3af;
+          color: var(--color-gray-400);
           display: flex;
           align-items: center;
 
           &:hover {
-            color: #6b7280;
+            color: var(--color-text-muted);
           }
         }
       }
 
       .ng-dropdown-panel {
-        background-color: #ffffff;
-        border: 1px solid #e5e7eb;
+        background-color: var(--color-background);
+        border: 1px solid var(--color-border);
         border-radius: 6px;
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         margin-top: 4px;
@@ -95,21 +95,21 @@
             transition: background-color 0.15s ease;
 
             &.ng-option-selected {
-              background-color: #eff6ff;
-              color: #007bff;
+              background-color: var(--color-blue-50);
+              color: var(--color-primary);
               font-weight: 500;
 
               &.ng-option-marked {
-                background-color: #dbeafe;
+                background-color: var(--color-blue-100);
               }
             }
 
             &.ng-option-marked {
-              background-color: #f3f4f6;
+              background-color: var(--color-background-lighter);
             }
 
             &.ng-option-disabled {
-              color: #d1d5db;
+              color: var(--color-border-light);
               cursor: not-allowed;
             }
           }
@@ -118,18 +118,18 @@
             padding: 8px 12px;
             font-weight: 600;
             font-size: 0.875rem;
-            color: #6b7280;
+            color: var(--color-text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            background-color: #f9fafb;
-            border-bottom: 1px solid #e5e7eb;
+            background-color: var(--color-background-light);
+            border-bottom: 1px solid var(--color-border);
           }
         }
 
         .ng-dropdown-footer,
         .ng-dropdown-header {
           padding: 8px 12px;
-          border-color: #e5e7eb;
+          border-color: var(--color-border);
         }
       }
 
@@ -144,7 +144,7 @@
 
       &.ng-select-disabled {
         .ng-select-container {
-          background-color: #f3f4f6;
+          background-color: var(--color-background-lighter);
           cursor: not-allowed;
         }
       }
@@ -155,17 +155,17 @@
     ::ng-deep .ng-select {
       .ng-select-container {
         border: none;
-        border-bottom: 2px solid #d1d5db;
+        border-bottom: 2px solid var(--color-border-light);
         border-radius: 0;
 
         &:hover {
-          border-bottom-color: #9ca3af;
+          border-bottom-color: var(--color-gray-400);
         }
       }
 
       &.ng-select-focused {
         .ng-select-container {
-          border-bottom-color: #007bff;
+          border-bottom-color: var(--color-primary);
           box-shadow: none;
         }
       }
@@ -192,9 +192,9 @@
     display: flex;
     align-items: center;
     padding: 4px 8px;
-    background-color: #eff6ff;
+    background-color: var(--color-blue-50);
     border-radius: 4px;
-    color: #007bff;
+    color: var(--color-primary);
     font-weight: 500;
     font-size: 0.875rem;
   }
@@ -220,37 +220,123 @@
     display: flex;
     gap: 4px;
     padding: 8px;
-    background-color: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
   }
 
   &__tab {
     flex: 1;
-    padding: 8px 16px;
-    background-color: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 12px;
+    background-color: transparent;
+    border: none;
     cursor: pointer;
     transition: all 0.2s ease;
-    text-align: center;
+    position: relative;
 
     &:hover {
-      background-color: #f3f4f6;
-      border-color: #9ca3af;
+      background-color: var(--color-background-lighter);
     }
 
     &--active {
-      background-color: #007bff;
-      border-color: #007bff;
-      color: #ffffff;
-
-      &:hover {
-        background-color: #0056b3;
-        border-color: #0056b3;
+      .app-select__tab-label {
+        color: var(--color-text);
+        font-weight: 600;
+        position: relative;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background-color: #fbbf24;
+          border-radius: 2px;
+        }
       }
+
+      .app-select__tab-icon {
+        color: var(--color-text);
+      }
+    }
+
+    &-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--color-text-muted);
+      transition: color 0.2s ease;
+    }
+
+    &-label {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      text-align: center;
+      transition: all 0.2s ease;
+      position: relative;
+      padding-bottom: 4px;
+    }
+  }
+
+  &__exclusive-option {
+    padding: 12px;
+    background-color: var(--color-background-light);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__exclusive-label {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-gray-700);
+    white-space: nowrap;
+    margin-right: 12px;
+    flex-shrink: 0;
+    background-color: var(--color-background-lighter);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 4px 12px;
+    line-height: 1.5;
+  }
+
+  &__search-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--color-background);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  &__search-input {
+    flex: 1;
+    padding-right: 32px;
+  }
+
+  &__search-clear {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    color: var(--color-gray-400);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      color: var(--color-text-muted);
     }
   }
 }

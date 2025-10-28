@@ -5,6 +5,7 @@ import { FilterStepComponent } from './components';
 import type { AttributeFilter, FilterStepValue } from './components';
 import { CommonModule } from '@angular/common';
 import { SelectOption } from '@core/models';
+import { take } from 'rxjs';
 
 interface FilterStep {
   id: number;
@@ -18,12 +19,12 @@ interface FilterStep {
   styleUrl: './filters-module.scss',
 })
 export class FiltersModuleComponent {
-  private readonly filtersFacade = inject(FiltersEventsInputSourceService);
+  private readonly eventsInputSourceFacade = inject(FiltersEventsInputSourceService);
 
   /**
    * Signal-based customer events data
    */
-  readonly eventsData = toSignal(this.filtersFacade.getEvents());
+  readonly eventsData = toSignal(this.eventsInputSourceFacade.getEvents());
 
   /**
    * Loading state signal
@@ -226,14 +227,17 @@ export class FiltersModuleComponent {
     this.isLoading.set(true);
     this.error.set(null);
 
-    this.filtersFacade.refreshEvents().subscribe({
-      next: () => {
-        this.isLoading.set(false);
-      },
-      error: (err) => {
-        this.isLoading.set(false);
-        this.error.set(err.message || 'Failed to load events');
-      },
-    });
+    this.eventsInputSourceFacade
+      .refreshEvents()
+      .pipe(take(1))
+      .subscribe({
+        next: () => {
+          this.isLoading.set(false);
+        },
+        error: (err) => {
+          this.isLoading.set(false);
+          this.error.set(err.message || 'Failed to load events');
+        },
+      });
   }
 }

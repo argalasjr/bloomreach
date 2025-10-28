@@ -1,0 +1,49 @@
+:root {
+  // Blue colors
+  --color-blue-50: #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #93c5fd;
+  --color-blue-400: #3b82f6;
+  --color-blue-500: #007bff;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #0056b3;
+  --color-blue-900: #1e40af;
+
+  // Gray colors
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #5a6268;
+  --color-gray-650: #6c757d;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+
+  // Red colors
+  --color-red-50: #fef2f2;
+  --color-red-100: #fee2e2;
+  --color-red-200: #fecaca;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+
+  // White
+  --color-white: #ffffff;
+
+  // Semantic colors (aliases for common usage)
+  --color-primary: var(--color-blue-500);
+  --color-primary-hover: var(--color-blue-700);
+  --color-border: var(--color-gray-200);
+  --color-border-light: var(--color-gray-300);
+  --color-text: var(--color-gray-800);
+  --color-text-muted: var(--color-gray-500);
+  --color-background: var(--color-white);
+  --color-background-light: var(--color-gray-50);
+  --color-background-lighter: var(--color-gray-100);
+  --color-error: var(--color-red-600);
+  --color-error-hover: var(--color-red-700);
+  --color-error-bg: var(--color-red-100);
+  --color-error-bg-light: var(--color-red-50);
+}
+

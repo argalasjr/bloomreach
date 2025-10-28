@@ -1,0 +1,20 @@
+@if (isEditing()) {
+  <input
+    #inputElement
+    type="text"
+    class="editable-input__field"
+    [value]="editValue()"
+    (input)="onInput($event)"
+    (blur)="finishEditing()"
+    (keydown)="onKeydown($event)"
+    [placeholder]="placeholder()"
+    autofocus
+  />
+} @else {
+  <div class="editable-input__display">
+    <span class="editable-input__text">{{ value() }}</span>
+    <button type="button" class="editable-input__edit-btn" (click)="startEditing()" title="Edit">
+      {{ editIcon() }}
+    </button>
+  </div>
+}

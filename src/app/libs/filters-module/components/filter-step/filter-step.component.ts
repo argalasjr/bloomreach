@@ -1,6 +1,5 @@
-import { Component, input, output, computed, signal, model, linkedSignal } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-import { SelectComponent } from '@core/components';
+import { Component, input, output, computed, signal, model } from '@angular/core';
+import { SelectComponent, EditableInputComponent } from '@core/components';
 import { SelectOption } from '@core/models';
 import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
 import { CommonModule } from '@angular/common';
@@ -23,7 +22,7 @@ export interface FilterStepValue {
 
 @Component({
   selector: 'app-filter-step',
-  imports: [CommonModule, SelectComponent, ReactiveFormsModule],
+  imports: [CommonModule, SelectComponent, EditableInputComponent],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
 })
@@ -67,12 +66,6 @@ export class FilterStepComponent {
   });
 
   private nextAttributeId = signal(2);
-
-  // Name editing state
-  readonly isEditingName = signal(false);
-
-  // Linked signal for name control - syncs with value().name
-  readonly nameControl = linkedSignal(() => this.value().name);
 
   // Computed options
   readonly eventTypeOptions = computed<SelectOption<string>[]>(() => {
@@ -173,7 +166,6 @@ export class FilterStepComponent {
       : eventTypeOption;
     // Reset all attribute filters when event type changes
     const newId = this.nextAttributeId();
-    console.log('test', eventTypeValue);
     this.value.set({
       name: eventTypeValue?.label ?? 'Unnamed step',
       eventType: eventTypeValue || null,
@@ -183,43 +175,13 @@ export class FilterStepComponent {
   }
 
   /**
-   * Start editing the name
+   * Update filter step name
    */
-  startEditingName(): void {
-    this.isEditingName.set(true);
-  }
-
-  /**
-   * Update filter step name from input
-   */
-  onNameInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.nameControl.set(input.value);
-  }
-
-  /**
-   * Finish editing the name (on blur or enter) and sync to value
-   */
-  finishEditingName(): void {
-    const newName = this.nameControl() || 'Unnamed step';
+  onNameChange(newName: string): void {
     this.value.update((current) => ({
       ...current,
       name: newName,
     }));
-    this.isEditingName.set(false);
-  }
-
-  /**
-   * Handle keydown on name input
-   */
-  onNameKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.finishEditingName();
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.finishEditingName();
-    }
   }
 
   /**
