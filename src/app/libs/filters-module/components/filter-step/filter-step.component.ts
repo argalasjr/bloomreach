@@ -1,4 +1,5 @@
-import { Component, input, output, computed, signal, model } from '@angular/core';
+import { Component, input, output, computed, signal, model, linkedSignal } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { SelectComponent } from '@core/components';
 import { SelectOption } from '@core/models';
 import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
@@ -15,13 +16,14 @@ export interface AttributeFilter {
 }
 
 export interface FilterStepValue {
+  name: string;
   eventType: SelectOption<string> | null;
   attributeFilters: AttributeFilter[];
 }
 
 @Component({
   selector: 'app-filter-step',
-  imports: [CommonModule, SelectComponent],
+  imports: [CommonModule, SelectComponent, ReactiveFormsModule],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
 })
@@ -33,6 +35,7 @@ export class FilterStepComponent {
 
   // Two-way binding model
   readonly value = model<FilterStepValue>({
+    name: 'Untitled Filter',
     eventType: null,
     attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
   });
@@ -64,6 +67,12 @@ export class FilterStepComponent {
   });
 
   private nextAttributeId = signal(2);
+
+  // Name editing state
+  readonly isEditingName = signal(false);
+
+  // Linked signal for name control - syncs with value().name
+  readonly nameControl = linkedSignal(() => this.value().name);
 
   // Computed options
   readonly eventTypeOptions = computed<SelectOption<string>[]>(() => {
@@ -164,11 +173,53 @@ export class FilterStepComponent {
       : eventTypeOption;
     // Reset all attribute filters when event type changes
     const newId = this.nextAttributeId();
+    console.log('test', eventTypeValue);
     this.value.set({
+      name: eventTypeValue?.label ?? 'Unnamed step',
       eventType: eventTypeValue || null,
       attributeFilters: [{ id: newId, property: null, operator: null, value: null }],
     });
     this.nextAttributeId.update((id) => id + 1);
+  }
+
+  /**
+   * Start editing the name
+   */
+  startEditingName(): void {
+    this.isEditingName.set(true);
+  }
+
+  /**
+   * Update filter step name from input
+   */
+  onNameInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.nameControl.set(input.value);
+  }
+
+  /**
+   * Finish editing the name (on blur or enter) and sync to value
+   */
+  finishEditingName(): void {
+    const newName = this.nameControl() || 'Unnamed step';
+    this.value.update((current) => ({
+      ...current,
+      name: newName,
+    }));
+    this.isEditingName.set(false);
+  }
+
+  /**
+   * Handle keydown on name input
+   */
+  onNameKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.finishEditingName();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.finishEditingName();
+    }
   }
 
   /**
@@ -288,6 +339,7 @@ export class FilterStepComponent {
     this.updateAttributeFilters((filters) => filters.filter((f) => f.id !== attributeId));
     if (this.attributeFilters().length === 0) {
       this.value.set({
+        name: this.value().name,
         eventType: null,
         attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
       });

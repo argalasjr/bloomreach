@@ -46,6 +46,7 @@ export class FiltersModuleComponent {
    */
   readonly appliedFilters = signal<
     {
+      name: string;
       eventType: SelectOption<string> | null;
       attributeFilters: {
         property: SelectOption<string> | null;
@@ -91,6 +92,7 @@ export class FiltersModuleComponent {
         });
       })
       .map((step: FilterStep) => ({
+        name: step.value.name,
         eventType: step.value.eventType,
         attributeFilters: step.value.attributeFilters
           .filter((attr: AttributeFilter) => {
@@ -123,8 +125,10 @@ export class FiltersModuleComponent {
   /**
    * Get empty filter value
    */
-  private getEmptyFilterValue(): FilterStepValue {
+  private getEmptyFilterValue(customName?: string): FilterStepValue {
+    const defaultName = customName || `Unnamed step`;
     return {
+      name: defaultName,
       eventType: null,
       attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
     };
@@ -163,6 +167,7 @@ export class FiltersModuleComponent {
     const newStep: FilterStep = {
       id: stepId,
       value: {
+        name: `${stepToDuplicate.value.name} (copy)`,
         eventType: stepToDuplicate.value.eventType,
         attributeFilters: stepToDuplicate.value.attributeFilters.map((attr) => {
           const newAttr = {

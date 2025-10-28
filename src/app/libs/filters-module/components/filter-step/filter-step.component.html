@@ -2,8 +2,29 @@
   <div class="filter-step__header">
     <div class="filter-step__header-left">
       <span class="filter-step__number">Step {{ stepNumber() }}</span>
-      @if (selectedEventType()) {
-        <span class="filter-step__event-name">{{ selectedEventType()?.label || '' }}</span>
+      @if (isEditingName()) {
+        <input
+          #nameInput
+          type="text"
+          class="filter-step__name-input"
+          [value]="nameControl()"
+          (input)="onNameInput($event)"
+          (blur)="finishEditingName()"
+          (keydown)="onNameKeydown($event)"
+          placeholder="Filter name..."
+        />
+      } @else {
+        <div class="filter-step__name-display">
+          <span class="filter-step__name-text">{{ value().name }}</span>
+          <button
+            type="button"
+            class="filter-step__name-edit"
+            (click)="startEditingName()"
+            title="Edit name"
+          >
+            ✏️
+          </button>
+        </div>
       }
     </div>
     @if (isComplete()) {
@@ -14,7 +35,7 @@
           type="button"
           title="Duplicate step"
         >
-          <span class="filter-step__action-icon">⎘</span>
+          <span class="filter-step__action-icon">📋</span>
         </button>
         @if (canRemove()) {
           <button
@@ -23,7 +44,7 @@
             type="button"
             title="Delete step"
           >
-            <span class="filter-step__action-icon">🗑</span>
+            <span class="filter-step__action-icon">🗑️</span>
           </button>
         }
       </div>

@@ -1,7 +1,7 @@
 <div [class]="cssClass()">
   <ng-select
     [ngModel]="value()"
-    (ngModelChange)="value.set($event); onChange($event)"
+    (ngModelChange)="value.set($event)"
     [items]="displayItems()"
     [bindLabel]="bindLabel()"
     [bindValue]="bindValue()"
