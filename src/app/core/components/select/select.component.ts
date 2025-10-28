@@ -2,16 +2,7 @@ import { Component, input, output, model, signal, computed, TemplateRef } from '
 import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-
-export interface SelectOption<T = any> {
-  label: string;
-  value: T;
-  disabled?: boolean;
-  [key: string]: any;
-}
-
-export type SelectAppearance = 'outline' | 'underline';
-export type SelectPosition = 'auto' | 'top' | 'bottom';
+import { SelectTab, SelectOption, SelectAppearance, SelectPosition } from '@core/models';
 
 @Component({
   selector: 'app-select',
@@ -22,6 +13,7 @@ export type SelectPosition = 'auto' | 'top' | 'bottom';
 export class SelectComponent<T = any> {
   // Inputs
   readonly items = input<SelectOption<T>[]>([]);
+  readonly tabs = input<SelectTab<T>[]>([]);
   readonly headerTemplate = input<TemplateRef<any> | null>(null);
   readonly placeholder = input<string>('Select option');
   readonly multiple = input<boolean>(false);
@@ -47,10 +39,10 @@ export class SelectComponent<T = any> {
   readonly typeToSearchText = input<string>('Type to search');
 
   // Two-way binding for selected value(s)
-  readonly value = model<T | T[] | null>(null);
+  readonly value = model<SelectOption<T> | SelectOption<T>[] | null>(null);
 
   // Outputs
-  readonly valueChange = output<T | T[] | null>();
+  readonly valueChange = output<SelectOption<T> | SelectOption<T>[] | null>();
   readonly searchChange = output<{ term: string; items: SelectOption<T>[] }>();
   readonly selectOpen = output<void>();
   readonly selectClose = output<void>();
@@ -61,6 +53,7 @@ export class SelectComponent<T = any> {
   // Internal state
   readonly isOpen = signal<boolean>(false);
   readonly searchTerm = signal<string>('');
+  readonly activeTabIndex = signal<number>(0);
 
   // Computed
   readonly cssClass = computed(() => {
@@ -78,10 +71,45 @@ export class SelectComponent<T = any> {
   });
 
   /**
+   * Check if tabs are enabled
+   */
+  readonly hasTabs = computed(() => this.tabs().length > 0);
+
+  /**
+   * Get active tab
+   */
+  readonly activeTab = computed(() => {
+    const tabsList = this.tabs();
+    const index = this.activeTabIndex();
+    return tabsList[index] || null;
+  });
+
+  /**
+   * Get the items to display - either from active tab or from items input
+   */
+  readonly displayItems = computed(() => {
+    if (this.hasTabs()) {
+      const tab = this.activeTab();
+      return tab ? tab.items : [];
+    }
+    return this.items();
+  });
+
+  /**
    * Handle value change event
    */
-  onChange(value: T | T[] | null): void {
+  onChange(value: SelectOption<T> | SelectOption<T>[] | null): void {
     this.valueChange.emit(value);
+  }
+
+  /**
+   * Switch to a specific tab
+   */
+  switchTab(index: number): void {
+    const tabsList = this.tabs();
+    if (index >= 0 && index < tabsList.length) {
+      this.activeTabIndex.set(index);
+    }
   }
 
   /**

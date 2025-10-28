@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FiltersFacadeService } from './services/filters-facade.service';
+import { FiltersEventsInputSourceService } from './services/filters-events-input-source.service';
 import { FilterStepComponent } from './components';
 import type { FilterStepValue } from './components';
 import { CommonModule } from '@angular/common';
@@ -17,7 +17,7 @@ interface FilterStep {
   styleUrl: './filters-module.scss',
 })
 export class FiltersModuleComponent {
-  private readonly filtersFacade = inject(FiltersFacadeService);
+  private readonly filtersFacade = inject(FiltersEventsInputSourceService);
 
   /**
    * Signal-based customer events data
@@ -67,7 +67,7 @@ export class FiltersModuleComponent {
       return step.value.attributeFilters.some((attr) => {
         if (!attr.property || !attr.operator) return false;
         // For "between" operator, check valueFrom and valueTo
-        if (attr.operator === 'between') {
+        if (attr.operator?.value === 'between') {
           return !!(attr.valueFrom && attr.valueTo);
         }
         // For other operators, check value
@@ -91,7 +91,7 @@ export class FiltersModuleComponent {
   private getEmptyFilterValue(): FilterStepValue {
     return {
       eventType: null,
-      attributeFilters: [{ id: 1, property: null, operator: null, value: null }],
+      attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
     };
   }
 

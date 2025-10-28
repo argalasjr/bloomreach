@@ -1,2 +1,2 @@
 // Export all directives here
-export {};
+export * from './select-tabs.directive';

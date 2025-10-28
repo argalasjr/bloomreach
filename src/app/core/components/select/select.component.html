@@ -2,10 +2,11 @@
   <ng-select
     [ngModel]="value()"
     (ngModelChange)="value.set($event); onChange($event)"
-    [items]="items()"
+    [items]="displayItems()"
     [bindLabel]="bindLabel()"
     [bindValue]="bindValue()"
     [placeholder]="placeholder()"
+    [fixedPlaceholder]="false"
     [multiple]="multiple()"
     [searchable]="searchable()"
     [clearable]="clearable()"
@@ -38,6 +39,24 @@
     @if (headerTemplate()) {
       <ng-template ng-header-tmp>
         <ng-container *ngTemplateOutlet="headerTemplate()!"></ng-container>
+      </ng-template>
+    }
+
+    <!-- Tabs header if tabs are provided -->
+    @if (hasTabs()) {
+      <ng-template ng-header-tmp>
+        <div class="app-select__tabs">
+          @for (tab of tabs(); track tab.value; let i = $index) {
+            <button
+              type="button"
+              class="app-select__tab"
+              [class.app-select__tab--active]="activeTabIndex() === i"
+              (click)="switchTab(i)"
+            >
+              {{ tab.label }}
+            </button>
+          }
+        </div>
       </ng-template>
     }
 

@@ -1,1 +1,1 @@
-export * from './filters-facade.service';
+export * from './filters-events-input-source.service';

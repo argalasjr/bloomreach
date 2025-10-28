@@ -1,12 +1,14 @@
 import { Component, input, output, computed, signal, model } from '@angular/core';
-import { SelectComponent, SelectOption } from '@core/components';
-import { EventType } from '../../models';
+import { SelectComponent } from '@core/components';
+import { SelectOption } from '@core/models';
+import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
 import { CommonModule } from '@angular/common';
 
 export interface AttributeFilter {
   id: number;
-  property: string | null;
-  operator: string | null;
+  property: SelectOption<string> | null;
+  operator: SelectOption<string> | null;
+  type?: 'string' | 'number' | null; // Property type chosen from tabs
   value: string | null;
   valueFrom?: string | null; // For "between" operator
   valueTo?: string | null; // For "between" operator
@@ -32,7 +34,7 @@ export class FilterStepComponent {
   // Two-way binding model
   readonly value = model<FilterStepValue>({
     eventType: null,
-    attributeFilters: [{ id: 1, property: null, operator: null, value: null }],
+    attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
   });
 
   // Outputs
@@ -53,7 +55,7 @@ export class FilterStepComponent {
     return this.attributeFilters().some((attr) => {
       if (!attr.property || !attr.operator) return false;
       // For "between" operator, check valueFrom and valueTo
-      if (attr.operator === 'between') {
+      if (attr.operator?.value === 'between') {
         return !!(attr.valueFrom && attr.valueTo);
       }
       // For other operators, check value
@@ -64,7 +66,7 @@ export class FilterStepComponent {
   private nextAttributeId = signal(2);
 
   // Computed options
-  readonly eventTypeOptions = computed<SelectOption[]>(() => {
+  readonly eventTypeOptions = computed<SelectOption<string>[]>(() => {
     return this.eventTypes().map((event) => ({
       label: this.formatEventTypeName(event.type),
       value: event.type,
@@ -76,65 +78,21 @@ export class FilterStepComponent {
   /**
    * Computed property options based on selected event type
    */
-  readonly propertyOptions = computed<SelectOption[]>(() => {
+  readonly propertyOptions = computed<SelectOption<string>[]>(() => {
     const eventType = this.selectedEventType();
     if (!eventType) return [];
 
     const event = this.eventTypes().find((event: EventType) => event.type === eventType.value);
     if (!event) return [];
 
-    return event.properties.map((property) => ({
-      label: this.formatPropertyName(property.property),
-      value: property.property,
-      metadata: property.type,
-    }));
-  });
-
-  /**
-   * Computed operator options for each attribute
-   */
-  readonly operatorOptionsMap = computed<Map<number, SelectOption[]>>(() => {
-    const eventType = this.selectedEventType();
-    if (!eventType) return new Map();
-
-    const event = this.eventTypes().find((e) => e.type === eventType.value);
-    if (!event) return new Map();
-
-    const optionsMap = new Map<number, SelectOption[]>();
-
-    this.attributeFilters().forEach((attribute) => {
-      if (!attribute.property) {
-        optionsMap.set(attribute.id, []);
-        return;
-      }
-
-      const prop = event.properties.find((p) => p.property === attribute.property);
-      if (!prop) {
-        optionsMap.set(attribute.id, []);
-        return;
-      }
-
-      if (prop.type === 'string') {
-        optionsMap.set(attribute.id, [
-          { label: 'Equals', value: 'equals' },
-          { label: 'Contains', value: 'contains' },
-          { label: 'Starts with', value: 'starts_with' },
-          { label: 'Ends with', value: 'ends_with' },
-          { label: 'Not equals', value: 'not_equals' },
-        ]);
-      } else if (prop.type === 'number') {
-        optionsMap.set(attribute.id, [
-          { label: 'Equal to', value: 'equals' },
-          { label: 'Less than', value: 'less_than' },
-          { label: 'Greater than', value: 'greater_than' },
-          { label: 'In between', value: 'between' },
-        ]);
-      } else {
-        optionsMap.set(attribute.id, []);
-      }
-    });
-
-    return optionsMap;
+    return event.properties.map(
+      (property: EventProperty) =>
+        ({
+          label: this.formatPropertyName(property.property),
+          value: property.property,
+          type: property.type,
+        }) as SelectOption<string>,
+    );
   });
 
   /**
@@ -155,12 +113,17 @@ export class FilterStepComponent {
         return;
       }
 
-      const prop = event.properties.find((p) => p.property === attribute.property);
+      const prop = event.properties.find((p) => p.property === attribute.property?.value);
       typeMap.set(attribute.id, prop?.type === 'number' ? 'number' : 'string');
     });
 
     return typeMap;
   });
+
+  /**
+   * Operator tabs - same for all attributes
+   */
+  readonly operatorTabs = OPERATOR_TABS;
 
   /**
    * Update attribute filters in model
@@ -195,11 +158,14 @@ export class FilterStepComponent {
   /**
    * Handle event type change
    */
-  onEventTypeChange(eventType: SelectOption<string> | null): void {
+  onEventTypeChange(eventTypeOption: SelectOption<string> | SelectOption<string>[] | null): void {
+    const eventTypeValue = Array.isArray(eventTypeOption)
+      ? eventTypeOption[0] || null
+      : eventTypeOption;
     // Reset all attribute filters when event type changes
     const newId = this.nextAttributeId();
     this.value.set({
-      eventType: eventType || null,
+      eventType: eventTypeValue || null,
       attributeFilters: [{ id: newId, property: null, operator: null, value: null }],
     });
     this.nextAttributeId.update((id) => id + 1);
@@ -219,7 +185,7 @@ export class FilterStepComponent {
    */
   onOperatorChange(attributeId: number): void {
     this.updateAttributeFilters((filters) =>
-      filters.map((f) =>
+      filters.map((f: AttributeFilter) =>
         f.id === attributeId ? { ...f, value: null, valueFrom: null, valueTo: null } : f,
       ),
     );
@@ -231,7 +197,9 @@ export class FilterStepComponent {
   onValueChange(attributeId: number, event: Event): void {
     const input = event.target as HTMLInputElement;
     this.updateAttributeFilters((filters) =>
-      filters.map((f) => (f.id === attributeId ? { ...f, value: input.value || null } : f)),
+      filters.map((f: AttributeFilter) =>
+        f.id === attributeId ? { ...f, value: input.value || null } : f,
+      ),
     );
   }
 
@@ -241,7 +209,9 @@ export class FilterStepComponent {
   onValueFromChange(attributeId: number, event: Event): void {
     const input = event.target as HTMLInputElement;
     this.updateAttributeFilters((filters) =>
-      filters.map((f) => (f.id === attributeId ? { ...f, valueFrom: input.value || null } : f)),
+      filters.map((f: AttributeFilter) =>
+        f.id === attributeId ? { ...f, valueFrom: input.value || null } : f,
+      ),
     );
   }
 
@@ -258,11 +228,16 @@ export class FilterStepComponent {
   /**
    * Update attribute property
    */
-  updateAttributeProperty(attributeId: number, property: SelectOption<string> | null): void {
+  updateAttributeProperty(
+    attributeId: number,
+    propertyOption: SelectOption<string> | SelectOption<string>[] | null,
+  ): void {
+    const property = Array.isArray(propertyOption) ? propertyOption[0] || null : propertyOption;
+
     this.updateAttributeFilters((filters) =>
-      filters.map((f) =>
+      filters.map((f: AttributeFilter) =>
         f.id === attributeId
-          ? { ...f, property: property?.value || null, operator: null, value: null }
+          ? { ...f, property: property || null, operator: null, value: null }
           : f,
       ),
     );
@@ -271,13 +246,17 @@ export class FilterStepComponent {
   /**
    * Update attribute operator
    */
-  updateAttributeOperator(attributeId: number, operator: SelectOption<string> | null): void {
+  updateAttributeOperator(
+    attributeId: number,
+    operatorOption: SelectOption<string> | SelectOption<string>[] | null,
+  ): void {
+    const operator = Array.isArray(operatorOption) ? operatorOption[0] || null : operatorOption;
     this.updateAttributeFilters((filters) =>
-      filters.map((f) =>
+      filters.map((f: AttributeFilter) =>
         f.id === attributeId
           ? {
               ...f,
-              operator: operator?.value || null,
+              operator,
               value: null,
               valueFrom: null,
               valueTo: null,
@@ -295,6 +274,7 @@ export class FilterStepComponent {
       id: this.nextAttributeId(),
       property: null,
       operator: null,
+      type: null,
       value: null,
     };
     this.updateAttributeFilters((filters) => [...filters, newFilter]);
@@ -306,34 +286,6 @@ export class FilterStepComponent {
    */
   removeAttributeFilter(attributeId: number): void {
     this.updateAttributeFilters((filters) => filters.filter((f) => f.id !== attributeId));
-  }
-
-  /**
-   * Get attribute filter by id
-   */
-  getAttributeFilter(attributeId: number): AttributeFilter | undefined {
-    return this.attributeFilters().find((f) => f.id === attributeId);
-  }
-
-  /**
-   * Get attribute property value
-   */
-  getAttributeProperty(attributeId: number): string | null {
-    return this.getAttributeFilter(attributeId)?.property || null;
-  }
-
-  /**
-   * Get attribute operator value
-   */
-  getAttributeOperator(attributeId: number): string | null {
-    return this.getAttributeFilter(attributeId)?.operator || null;
-  }
-
-  /**
-   * Get attribute value
-   */
-  getAttributeValue(attributeId: number): string | null {
-    return this.getAttributeFilter(attributeId)?.value || null;
   }
 
   /**

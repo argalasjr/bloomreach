@@ -215,5 +215,43 @@
       background-color: rgba(0, 123, 255, 0.1);
     }
   }
+
+  &__tabs {
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  &__tab {
+    flex: 1;
+    padding: 8px 16px;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+
+    &:hover {
+      background-color: #f3f4f6;
+      border-color: #9ca3af;
+    }
+
+    &--active {
+      background-color: #007bff;
+      border-color: #007bff;
+      color: #ffffff;
+
+      &:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+      }
+    }
+  }
 }
 

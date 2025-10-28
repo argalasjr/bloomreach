@@ -7,7 +7,7 @@ import { EventsResponse } from '../models';
 @Injectable({
   providedIn: 'root',
 })
-export class FiltersFacadeService {
+export class FiltersEventsInputSourceService {
   private readonly endpointService = inject(EndpointService);
   private readonly cacheService = inject(HttpCacheService);
 
