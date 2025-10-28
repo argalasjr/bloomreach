@@ -2,8 +2,9 @@ import { Component, inject, signal, computed } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FiltersEventsInputSourceService } from './services/filters-events-input-source.service';
 import { FilterStepComponent } from './components';
-import type { FilterStepValue } from './components';
+import type { AttributeFilter, FilterStepValue } from './components';
 import { CommonModule } from '@angular/common';
+import { SelectOption } from '@core/models';
 
 interface FilterStep {
   id: number;
@@ -41,8 +42,21 @@ export class FiltersModuleComponent {
 
   /**
    * Applied filters (only updates when user clicks "Apply Filters")
+   * Stores cleaned data without internal IDs, ready for backend
    */
-  readonly appliedFilters = signal<FilterStep[]>([]);
+  readonly appliedFilters = signal<
+    {
+      eventType: SelectOption<string> | null;
+      attributeFilters: {
+        property: SelectOption<string> | null;
+        operator: SelectOption<string> | null;
+        type?: 'string' | 'number' | null;
+        value: string | null;
+        valueFrom?: string | null;
+        valueTo?: string | null;
+      }[];
+    }[]
+  >([]);
 
   /**
    * Next filter step ID
@@ -58,22 +72,43 @@ export class FiltersModuleComponent {
   });
 
   /**
-   * Get active filters from current filterSteps state
+   * Get active filters from current filterSteps state (without internal IDs)
    * This is a method, not a computed, so it reads fresh data when called
+   * Returns data ready for backend submission
    */
-  getActiveFilters(): FilterStep[] {
-    return this.filterSteps().filter((step) => {
-      if (!step.value.eventType) return false;
-      return step.value.attributeFilters.some((attr) => {
-        if (!attr.property || !attr.operator) return false;
-        // For "between" operator, check valueFrom and valueTo
-        if (attr.operator?.value === 'between') {
-          return !!(attr.valueFrom && attr.valueTo);
-        }
-        // For other operators, check value
-        return !!attr.value;
-      });
-    });
+  getActiveFilters() {
+    return this.filterSteps()
+      .filter((step: FilterStep) => {
+        if (!step.value.eventType) return false;
+        return step.value.attributeFilters.some((attr: AttributeFilter) => {
+          if (!attr.property || !attr.operator) return false;
+          // For "between" operator, check valueFrom and valueTo
+          if (attr.operator?.value === 'between') {
+            return !!(attr.valueFrom && attr.valueTo);
+          }
+          // For other operators, check value
+          return !!attr.value;
+        });
+      })
+      .map((step: FilterStep) => ({
+        eventType: step.value.eventType,
+        attributeFilters: step.value.attributeFilters
+          .filter((attr: AttributeFilter) => {
+            if (!attr.property || !attr.operator) return false;
+            if (attr.operator?.value === 'between') {
+              return !!(attr.valueFrom && attr.valueTo);
+            }
+            return !!attr.value;
+          })
+          .map((attr: AttributeFilter) => ({
+            property: attr.property,
+            operator: attr.operator,
+            type: attr.type,
+            value: attr.value,
+            valueFrom: attr.valueFrom,
+            valueTo: attr.valueTo,
+          })),
+      }));
   }
 
   /**
@@ -121,14 +156,22 @@ export class FiltersModuleComponent {
     const stepToDuplicate = this.filterSteps().find((step) => step.id === id);
     if (!stepToDuplicate) return;
 
+    // Get current nextId for the step
+    const stepId = this.nextId();
+    let currentId = stepId + 1;
+
     const newStep: FilterStep = {
-      id: this.nextId(),
+      id: stepId,
       value: {
         eventType: stepToDuplicate.value.eventType,
-        attributeFilters: stepToDuplicate.value.attributeFilters.map((attr) => ({
-          ...attr,
-          id: Math.random(), // Generate new IDs for duplicated filters
-        })),
+        attributeFilters: stepToDuplicate.value.attributeFilters.map((attr) => {
+          const newAttr = {
+            ...attr,
+            id: currentId,
+          };
+          currentId = currentId + 1;
+          return newAttr;
+        }),
       },
     };
 
@@ -139,7 +182,9 @@ export class FiltersModuleComponent {
       newStep,
       ...steps.slice(index + 1),
     ]);
-    this.nextId.update((id) => id + 1);
+
+    // Update nextId to account for step ID + all attribute filter IDs
+    this.nextId.set(currentId);
   }
 
   /**
@@ -154,10 +199,10 @@ export class FiltersModuleComponent {
   }
 
   /**
-   * Remove an applied filter
+   * Remove an applied filter by index
    */
-  removeAppliedFilter(id: number): void {
-    this.appliedFilters.update((filters) => filters.filter((filter) => filter.id !== id));
+  removeAppliedFilter(index: number): void {
+    this.appliedFilters.update((filters) => filters.filter((_, i) => i !== index));
   }
 
   /**

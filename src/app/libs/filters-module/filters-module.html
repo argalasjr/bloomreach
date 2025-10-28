@@ -55,12 +55,12 @@
         <div class="filters-container__active">
           <h3>Applied Filters</h3>
           <div class="filters-container__active-list">
-            @for (filter of appliedFilters(); track filter.id) {
-              @for (attr of filter.value.attributeFilters; track attr.id) {
+            @for (filter of appliedFilters(); track $index; let filterIndex = $index) {
+              @for (attr of filter.attributeFilters; track $index) {
                 @if (attr.property && attr.operator) {
                   <div class="filter-tag">
                     <span class="filter-tag__content">
-                      <strong>{{ filter.value.eventType?.label || filter.value.eventType }}</strong>
+                      <strong>{{ filter.eventType?.label || filter.eventType }}</strong>
                       →
                       {{ attr.property.label }}
                       {{ attr.operator.label }}
@@ -72,7 +72,7 @@
                     </span>
                     <button
                       class="filter-tag__remove"
-                      (click)="removeAppliedFilter(filter.id)"
+                      (click)="removeAppliedFilter(filterIndex)"
                       type="button"
                     >
                       ×

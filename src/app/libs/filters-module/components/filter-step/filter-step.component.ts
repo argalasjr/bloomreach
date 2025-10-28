@@ -286,6 +286,13 @@ export class FilterStepComponent {
    */
   removeAttributeFilter(attributeId: number): void {
     this.updateAttributeFilters((filters) => filters.filter((f) => f.id !== attributeId));
+    if (this.attributeFilters().length === 0) {
+      this.value.set({
+        eventType: null,
+        attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
+      });
+    }
+    this.nextAttributeId.set(1);
   }
 
   /**

@@ -79,16 +79,18 @@
         </div>
 
         <!-- Operator -->
-        <div class="filter-step__field" [class.filter-step__field--hidden]="!attribute.property">
-          <label class="filter-step__label">Operator</label>
-          <app-select
-            [tabs]="attribute.property ? operatorTabs : []"
-            [value]="attribute.operator"
-            (valueChange)="updateAttributeOperator(attribute.id, $event)"
-            placeholder="Operator..."
-          >
-          </app-select>
-        </div>
+        @if (attribute.property) {
+          <div class="filter-step__field">
+            <label class="filter-step__label">Operator</label>
+            <app-select
+              [tabs]="attribute.property ? operatorTabs : []"
+              [value]="attribute.operator"
+              (valueChange)="updateAttributeOperator(attribute.id, $event)"
+              placeholder="Operator..."
+            >
+            </app-select>
+          </div>
+        }
 
         <!-- Value (for non-between operators) -->
         @if (attribute.operator && attribute.operator.value !== 'between') {
@@ -134,7 +136,7 @@
 
         <!-- Remove Button -->
         <div class="filter-step__field filter-step__field--action">
-          @if (attributeFilters().length > 1) {
+          @if (selectedEventType()) {
             <button
               class="filter-step__remove-row"
               (click)="removeAttributeFilter(attribute.id)"
