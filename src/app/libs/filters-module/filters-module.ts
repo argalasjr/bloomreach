@@ -132,7 +132,17 @@ export class FiltersModuleComponent {
     return {
       name: defaultName,
       eventType: null,
-      attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
+      attributeFilters: [
+        {
+          id: 1,
+          property: null,
+          operator: null,
+          type: null,
+          value: null,
+          valueFrom: null,
+          valueTo: null,
+        },
+      ],
     };
   }
 

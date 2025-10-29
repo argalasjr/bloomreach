@@ -11,18 +11,34 @@ import {
   ChangeDetectionStrategy,
 } from '@angular/core';
 import { NgSelectModule } from '@ng-select/ng-select';
-import { FormsModule } from '@angular/forms';
+import {
+  FormsModule,
+  ReactiveFormsModule,
+  ControlValueAccessor,
+  NG_VALUE_ACCESSOR,
+  FormControl,
+} from '@angular/forms';
+import { FormValueControl, WithOptionalField, ValidationError } from '@angular/forms/signals';
 import { CommonModule } from '@angular/common';
 import { SelectTab, SelectOption, SelectAppearance, SelectPosition } from '@core/models';
 
 @Component({
   selector: 'app-select',
-  imports: [NgSelectModule, FormsModule, CommonModule],
+  imports: [NgSelectModule, FormsModule, ReactiveFormsModule, CommonModule],
   templateUrl: './select.component.html',
   styleUrl: './select.component.scss',
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: SelectComponent,
+      multi: true,
+    },
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SelectComponent<T = any> {
+export class SelectComponent<T = any>
+  implements ControlValueAccessor, FormValueControl<SelectOption<T> | SelectOption<T>[] | null>
+{
   // View children
   readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
@@ -54,8 +70,20 @@ export class SelectComponent<T = any> {
   readonly minTermLength = input<number>(0);
   readonly typeToSearchText = input<string>('Type to search');
 
-  // Two-way binding for selected value(s)
+  // FormValueControl interface - required for Signal Forms [field] binding
+  // The Field directive automatically binds to the value model signal
   readonly value = model<SelectOption<T> | SelectOption<T>[] | null>(null);
+
+  // Optional FormValueControl properties
+  readonly errors = input<readonly WithOptionalField<ValidationError>[]>([]);
+
+  // FormControl for ng-select compatibility (reactive forms)
+  readonly valueControl = new FormControl<SelectOption<T> | SelectOption<T>[] | null>(null);
+
+  // ControlValueAccessor callbacks
+  private onChange: (value: SelectOption<T> | SelectOption<T>[] | null) => void = () => {};
+  private onTouched: () => void = () => {};
+  readonly isDisabled = signal<boolean>(false);
 
   // Outputs
   readonly valueChange = output<SelectOption<T> | SelectOption<T>[] | null>();
@@ -129,7 +157,8 @@ export class SelectComponent<T = any> {
   });
 
   /**
-   * Handle value change event from ngModelChange
+   * Handle value change event from ng-select
+   * Updates form control and model, and notifies CVA
    */
   onValueChange(value: SelectOption<T> | SelectOption<T>[] | null): void {
     // Filter out Event objects (from input elements)
@@ -137,8 +166,45 @@ export class SelectComponent<T = any> {
       return;
     }
 
-    this.value.set(value);
+    // Update model for two-way binding first
+    // The Field directive will automatically sync this to the Signal Forms field
+    const currentValue = this.value();
+    if (value !== currentValue) {
+      this.value.set(value);
+    }
+
+    // Update internal form control if different (ng-select may have already updated it)
+    const currentControlValue = this.valueControl.value;
+    if (value !== currentControlValue) {
+      this.valueControl.setValue(value, { emitEvent: false });
+    }
+
+    // Notify ControlValueAccessor
+    this.onChange(value);
+
+    // Emit output event
     this.valueChange.emit(value);
+  }
+
+  // ControlValueAccessor implementation
+  writeValue(value: SelectOption<T> | SelectOption<T>[] | null): void {
+    // Sync both model and control when value changes externally (from Field directive)
+    const currentValue = this.value();
+    if (currentValue !== value) {
+      this.value.set(value);
+    }
+    const currentControlValue = this.valueControl.value;
+    if (currentControlValue !== value) {
+      this.valueControl.setValue(value, { emitEvent: false });
+    }
+  }
+
+  registerOnChange(fn: (value: SelectOption<T> | SelectOption<T>[] | null) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
   }
 
   /**
@@ -180,7 +246,9 @@ export class SelectComponent<T = any> {
    * Handle clear event
    */
   onClear(): void {
+    this.valueControl.setValue(null);
     this.value.set(null);
+    this.onChange(null);
     this.selectClear.emit();
   }
 

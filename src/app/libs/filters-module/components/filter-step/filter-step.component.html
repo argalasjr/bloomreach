@@ -3,7 +3,7 @@
     <div class="filter-step__header-left">
       <span class="filter-step__number">{{ stepNumber() }}. Step:</span>
       <app-editable-input
-        [value]="value().name"
+        [value]="name()"
         (valueChange)="onNameChange($event)"
         placeholder="Filter name..."
       />
@@ -40,7 +40,8 @@
       attribute of attributeFilters();
       track attribute.id;
       let first = $first;
-      let last = $last
+      let last = $last;
+      let i = $index
     ) {
       <div class="filter-step__row" [class.filter-step__row--last]="last">
         <!-- Event Type (only show in first row) -->
@@ -51,12 +52,11 @@
           @if (first) {
             <label class="filter-step__label">Event</label>
             <app-select
+              [field]="filterForm.eventType"
               [items]="eventTypeOptions()"
-              [value]="selectedEventType()"
               placeholder="Event type..."
               [searchable]="true"
               [minTermLength]="1"
-              (valueChange)="onEventTypeChange($event)"
             >
             </app-select>
           }
@@ -69,10 +69,9 @@
         >
           <label class="filter-step__label">Attribute</label>
           <app-select
+            [field]="filterForm.attributeFilters[i].property"
             [items]="propertyOptions()"
-            [value]="attribute.property"
             [exclusiveOption]="selectedEventType()"
-            (valueChange)="updateAttributeProperty(attribute.id, $event)"
             placeholder="Property..."
             [searchable]="true"
           >
@@ -89,10 +88,9 @@
           <div class="filter-step__field filter-step__field--operator">
             <label class="filter-step__label">Operator</label>
             <app-select
+              [field]="filterForm.attributeFilters[i].operator"
               [searchable]="false"
               [tabs]="attribute.property ? operatorTabs : []"
-              [value]="attribute.operator"
-              (valueChange)="updateAttributeOperator(attribute.id, $event)"
               placeholder="Operator..."
             >
             </app-select>
@@ -104,10 +102,9 @@
           <div class="filter-step__field filter-step__field--value">
             <label class="filter-step__label">Value</label>
             <input
+              [field]="filterForm.attributeFilters[i].value"
               [type]="propertyTypeMap().get(attribute.id) || 'text'"
               class="g-input"
-              [value]="attribute.value || ''"
-              (input)="onValueChange(attribute.id, $event)"
               placeholder="Value..."
             />
           </div>
@@ -118,10 +115,9 @@
             <div class="filter-step__field filter-step__field--value-range">
               <label class="filter-step__label">From</label>
               <input
+                [field]="filterForm.attributeFilters[i].valueFrom"
                 type="number"
                 class="g-input"
-                [value]="attribute.valueFrom || ''"
-                (input)="onValueFromChange(attribute.id, $event)"
                 placeholder="From..."
               />
             </div>
@@ -131,10 +127,9 @@
             <div class="filter-step__field filter-step__field--value-range">
               <label class="filter-step__label">To</label>
               <input
+                [field]="filterForm.attributeFilters[i].valueTo"
                 type="number"
                 class="g-input"
-                [value]="attribute.valueTo || ''"
-                (input)="onValueToChange(attribute.id, $event)"
                 placeholder="To..."
               />
             </div>
