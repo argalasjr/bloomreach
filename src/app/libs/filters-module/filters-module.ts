@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FiltersEventsInputSourceService } from './services/filters-events-input-source.service';
 import { FilterStepComponent } from './components';
@@ -17,6 +17,7 @@ interface FilterStep {
   imports: [CommonModule, FilterStepComponent],
   templateUrl: './filters-module.html',
   styleUrl: './filters-module.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FiltersModuleComponent {
   private readonly eventsInputSourceFacade = inject(FiltersEventsInputSourceService);

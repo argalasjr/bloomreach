@@ -8,6 +8,7 @@ import {
   TemplateRef,
   viewChild,
   ElementRef,
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
@@ -19,6 +20,7 @@ import { SelectTab, SelectOption, SelectAppearance, SelectPosition } from '@core
   imports: [NgSelectModule, FormsModule, CommonModule],
   templateUrl: './select.component.html',
   styleUrl: './select.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SelectComponent<T = any> {
   // View children

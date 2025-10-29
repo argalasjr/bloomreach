@@ -1,4 +1,12 @@
-import { Component, input, output, computed, signal, model } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  computed,
+  signal,
+  model,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { SelectComponent, EditableInputComponent } from '@core/components';
 import { SelectOption } from '@core/models';
 import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
@@ -25,6 +33,7 @@ export interface FilterStepValue {
   imports: [CommonModule, SelectComponent, EditableInputComponent],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FilterStepComponent {
   // Inputs
