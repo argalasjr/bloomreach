@@ -6,13 +6,11 @@ import {
   signal,
   model,
   ChangeDetectionStrategy,
-  linkedSignal,
 } from '@angular/core';
 import { form, Field } from '@angular/forms/signals';
 import { SelectComponent, EditableInputComponent } from '@core/components';
 import { SelectOption } from '@core/models';
 import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
-import { JsonPipe } from '@angular/common';
 
 export interface AttributeFilter {
   id: number;
@@ -20,8 +18,8 @@ export interface AttributeFilter {
   operator: SelectOption<string> | null;
   type?: 'string' | 'number' | null; // Property type chosen from tabs
   value: string | null;
-  valueFrom?: string | null; // For "between" operator
-  valueTo?: string | null; // For "between" operator
+  valueFrom: string | null; // For "between" operator - always defined
+  valueTo: string | null; // For "between" operator - always defined
 }
 
 export interface FilterStepValue {
@@ -32,7 +30,7 @@ export interface FilterStepValue {
 
 @Component({
   selector: 'app-filter-step',
-  imports: [JsonPipe, SelectComponent, EditableInputComponent, Field],
+  imports: [SelectComponent, EditableInputComponent, Field],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,29 +41,41 @@ export class FilterStepComponent {
   readonly stepNumber = input<number>(1);
   readonly canRemove = input<boolean>(true);
 
-  // Two-way binding model - kept for backward compatibility
+  // Two-way binding model
   readonly value = model<FilterStepValue>({
-    name: 'Untitled Filter',
+    name: 'Unnamed filter',
     eventType: null,
-    attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
+    attributeFilters: [
+      {
+        id: 1,
+        property: null,
+        operator: null,
+        type: null,
+        value: null,
+        valueFrom: null,
+        valueTo: null,
+      },
+    ],
   });
 
   // Outputs
   readonly remove = output<void>();
   readonly duplicate = output<void>();
 
-  // Signal Forms: linked signal automatically syncs with value model
-  readonly formValue = linkedSignal(() => this.value());
-
-  // Signal Forms: create form with linked signal (no validation schema needed for now)
-  readonly filterForm = form(this.formValue, () => {
+  // Signal Forms: pass model signal directly - form() automatically syncs changes back to the model
+  // form() uses the model as the source of truth and updates it when field values change
+  readonly filterForm = form(this.value, () => {
     // No validation rules needed for this form
   });
 
   // Computed signals from form fields
   readonly selectedEventType = computed(() => this.filterForm.eventType().value());
   readonly attributeFilters = computed(() => this.filterForm.attributeFilters().value());
-  readonly name = computed(() => this.filterForm.name().value());
+  readonly name = computed(() =>
+    this.filterForm.name().value().includes('Unnamed')
+      ? this.filterForm.eventType().value()?.label || this.filterForm.name().value()
+      : this.filterForm.name().value(),
+  );
 
   /**
    * Check if the step is complete (has all required values)
@@ -177,169 +187,10 @@ export class FilterStepComponent {
   }
 
   /**
-   * Get form field for a specific attribute filter's property
-   * Returns the Field signal for the property of the attribute at the given index
-   */
-  getAttributePropertyField(index: number) {
-    const arrayField = this.filterForm.attributeFilters();
-    // Access the array item field - Signal Forms returns Field signals for array items
-    // For nested properties, we need to access via the array item's field
-    const itemFields = arrayField.value();
-    if (index >= itemFields.length) return null;
-    // Return a computed that accesses the property field
-    // Note: This might need adjustment based on Signal Forms API for nested arrays
-    return computed(() => {
-      const items = arrayField.value();
-      return items[index]?.property || null;
-    });
-  }
-
-  /**
-   * Get form field for a specific attribute filter's operator
-   */
-  getAttributeOperatorField(index: number) {
-    const arrayField = this.filterForm.attributeFilters();
-    return computed(() => {
-      const items = arrayField.value();
-      return items[index]?.operator || null;
-    });
-  }
-
-  /**
-   * Get attribute filter by ID and return its index
-   */
-  getAttributeIndex(attributeId: number): number {
-    const filters = this.attributeFilters();
-    return filters.findIndex((f) => f.id === attributeId);
-  }
-
-  /**
    * Update filter step name
    */
   onNameChange(newName: string): void {
     this.filterForm.name().value.set(newName);
-  }
-
-  /**
-   * Handle property change for specific attribute
-   */
-  onPropertyChange(attributeId: number): void {
-    this.updateAttributeFilters((filters) =>
-      filters.map((f) => (f.id === attributeId ? { ...f, operator: null, value: null } : f)),
-    );
-  }
-
-  /**
-   * Handle operator change for specific attribute
-   */
-  onOperatorChange(attributeId: number): void {
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) =>
-        f.id === attributeId ? { ...f, value: null, valueFrom: null, valueTo: null } : f,
-      ),
-    );
-  }
-
-  /**
-   * Handle value input change for specific attribute
-   */
-  onValueChange(attributeId: number, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) =>
-        f.id === attributeId ? { ...f, value: input.value || null } : f,
-      ),
-    );
-  }
-
-  /**
-   * Handle "from" value change for "between" operator
-   */
-  onValueFromChange(attributeId: number, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) =>
-        f.id === attributeId ? { ...f, valueFrom: input.value || null } : f,
-      ),
-    );
-  }
-
-  /**
-   * Handle "to" value change for "between" operator
-   */
-  onValueToChange(attributeId: number, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateAttributeFilters((filters) =>
-      filters.map((f) => (f.id === attributeId ? { ...f, valueTo: input.value || null } : f)),
-    );
-  }
-
-  /**
-   * Update value directly via signal (for signal forms compatibility)
-   */
-  updateValue(attributeId: number, value: string | null): void {
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) => (f.id === attributeId ? { ...f, value } : f)),
-    );
-  }
-
-  /**
-   * Update valueFrom directly via signal (for signal forms compatibility)
-   */
-  updateValueFrom(attributeId: number, valueFrom: string | null): void {
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) => (f.id === attributeId ? { ...f, valueFrom } : f)),
-    );
-  }
-
-  /**
-   * Update valueTo directly via signal (for signal forms compatibility)
-   */
-  updateValueTo(attributeId: number, valueTo: string | null): void {
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) => (f.id === attributeId ? { ...f, valueTo } : f)),
-    );
-  }
-
-  /**
-   * Update attribute property
-   */
-  updateAttributeProperty(
-    attributeId: number,
-    propertyOption: SelectOption<string> | SelectOption<string>[] | null,
-  ): void {
-    const property = Array.isArray(propertyOption) ? propertyOption[0] || null : propertyOption;
-
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) =>
-        f.id === attributeId
-          ? { ...f, property: property || null, operator: null, value: null }
-          : f,
-      ),
-    );
-  }
-
-  /**
-   * Update attribute operator
-   */
-  updateAttributeOperator(
-    attributeId: number,
-    operatorOption: SelectOption<string> | SelectOption<string>[] | null,
-  ): void {
-    const operator = Array.isArray(operatorOption) ? operatorOption[0] || null : operatorOption;
-    this.updateAttributeFilters((filters) =>
-      filters.map((f: AttributeFilter) =>
-        f.id === attributeId
-          ? {
-              ...f,
-              operator,
-              value: null,
-              valueFrom: null,
-              valueTo: null,
-            }
-          : f,
-      ),
-    );
   }
 
   /**
@@ -352,6 +203,8 @@ export class FilterStepComponent {
       operator: null,
       type: null,
       value: null,
+      valueFrom: null,
+      valueTo: null,
     };
     this.updateAttributeFilters((filters) => [...filters, newFilter]);
     this.nextAttributeId.update((id) => id + 1);
@@ -365,9 +218,17 @@ export class FilterStepComponent {
     if (this.attributeFilters().length === 0) {
       this.filterForm.name().value.set(this.filterForm.name().value());
       this.filterForm.eventType().value.set(null);
-      this.filterForm
-        .attributeFilters()
-        .value.set([{ id: 1, property: null, operator: null, type: null, value: null }]);
+      this.filterForm.attributeFilters().value.set([
+        {
+          id: 1,
+          property: null,
+          operator: null,
+          type: null,
+          value: null,
+          valueFrom: null,
+          valueTo: null,
+        },
+      ]);
     }
     this.nextAttributeId.set(1);
   }
