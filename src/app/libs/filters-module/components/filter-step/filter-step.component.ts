@@ -1,8 +1,18 @@
-import { Component, input, output, computed, signal, model } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  computed,
+  signal,
+  model,
+  ChangeDetectionStrategy,
+  linkedSignal,
+} from '@angular/core';
+import { form, Field } from '@angular/forms/signals';
 import { SelectComponent, EditableInputComponent } from '@core/components';
 import { SelectOption } from '@core/models';
 import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
-
+import { JsonPipe } from '@angular/common';
 
 export interface AttributeFilter {
   id: number;
@@ -22,9 +32,10 @@ export interface FilterStepValue {
 
 @Component({
   selector: 'app-filter-step',
-  imports: [SelectComponent, EditableInputComponent],
+  imports: [JsonPipe, SelectComponent, EditableInputComponent, Field],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FilterStepComponent {
   // Inputs
@@ -32,7 +43,7 @@ export class FilterStepComponent {
   readonly stepNumber = input<number>(1);
   readonly canRemove = input<boolean>(true);
 
-  // Two-way binding model
+  // Two-way binding model - kept for backward compatibility
   readonly value = model<FilterStepValue>({
     name: 'Untitled Filter',
     eventType: null,
@@ -43,9 +54,18 @@ export class FilterStepComponent {
   readonly remove = output<void>();
   readonly duplicate = output<void>();
 
-  // Internal state - derived from value model
-  readonly selectedEventType = computed(() => this.value().eventType);
-  readonly attributeFilters = computed(() => this.value().attributeFilters);
+  // Signal Forms: linked signal automatically syncs with value model
+  readonly formValue = linkedSignal(() => this.value());
+
+  // Signal Forms: create form with linked signal (no validation schema needed for now)
+  readonly filterForm = form(this.formValue, () => {
+    // No validation rules needed for this form
+  });
+
+  // Computed signals from form fields
+  readonly selectedEventType = computed(() => this.filterForm.eventType().value());
+  readonly attributeFilters = computed(() => this.filterForm.attributeFilters().value());
+  readonly name = computed(() => this.filterForm.name().value());
 
   /**
    * Check if the step is complete (has all required values)
@@ -128,13 +148,12 @@ export class FilterStepComponent {
   readonly operatorTabs = OPERATOR_TABS;
 
   /**
-   * Update attribute filters in model
+   * Update attribute filters in form
    */
   private updateAttributeFilters(updater: (filters: AttributeFilter[]) => AttributeFilter[]): void {
-    this.value.update((current) => ({
-      ...current,
-      attributeFilters: updater(current.attributeFilters),
-    }));
+    const currentFilters = this.filterForm.attributeFilters().value();
+    const updatedFilters = updater(currentFilters);
+    this.filterForm.attributeFilters().value.set(updatedFilters);
   }
 
   /**
@@ -158,30 +177,47 @@ export class FilterStepComponent {
   }
 
   /**
-   * Handle event type change
+   * Get form field for a specific attribute filter's property
+   * Returns the Field signal for the property of the attribute at the given index
    */
-  onEventTypeChange(eventTypeOption: SelectOption<string> | SelectOption<string>[] | null): void {
-    const eventTypeValue = Array.isArray(eventTypeOption)
-      ? eventTypeOption[0] || null
-      : eventTypeOption;
-    // Reset all attribute filters when event type changes
-    const newId = this.nextAttributeId();
-    this.value.set({
-      name: eventTypeValue?.label ?? 'Unnamed step',
-      eventType: eventTypeValue || null,
-      attributeFilters: [{ id: newId, property: null, operator: null, value: null }],
+  getAttributePropertyField(index: number) {
+    const arrayField = this.filterForm.attributeFilters();
+    // Access the array item field - Signal Forms returns Field signals for array items
+    // For nested properties, we need to access via the array item's field
+    const itemFields = arrayField.value();
+    if (index >= itemFields.length) return null;
+    // Return a computed that accesses the property field
+    // Note: This might need adjustment based on Signal Forms API for nested arrays
+    return computed(() => {
+      const items = arrayField.value();
+      return items[index]?.property || null;
     });
-    this.nextAttributeId.update((id) => id + 1);
+  }
+
+  /**
+   * Get form field for a specific attribute filter's operator
+   */
+  getAttributeOperatorField(index: number) {
+    const arrayField = this.filterForm.attributeFilters();
+    return computed(() => {
+      const items = arrayField.value();
+      return items[index]?.operator || null;
+    });
+  }
+
+  /**
+   * Get attribute filter by ID and return its index
+   */
+  getAttributeIndex(attributeId: number): number {
+    const filters = this.attributeFilters();
+    return filters.findIndex((f) => f.id === attributeId);
   }
 
   /**
    * Update filter step name
    */
   onNameChange(newName: string): void {
-    this.value.update((current) => ({
-      ...current,
-      name: newName,
-    }));
+    this.filterForm.name().value.set(newName);
   }
 
   /**
@@ -235,6 +271,33 @@ export class FilterStepComponent {
     const input = event.target as HTMLInputElement;
     this.updateAttributeFilters((filters) =>
       filters.map((f) => (f.id === attributeId ? { ...f, valueTo: input.value || null } : f)),
+    );
+  }
+
+  /**
+   * Update value directly via signal (for signal forms compatibility)
+   */
+  updateValue(attributeId: number, value: string | null): void {
+    this.updateAttributeFilters((filters) =>
+      filters.map((f: AttributeFilter) => (f.id === attributeId ? { ...f, value } : f)),
+    );
+  }
+
+  /**
+   * Update valueFrom directly via signal (for signal forms compatibility)
+   */
+  updateValueFrom(attributeId: number, valueFrom: string | null): void {
+    this.updateAttributeFilters((filters) =>
+      filters.map((f: AttributeFilter) => (f.id === attributeId ? { ...f, valueFrom } : f)),
+    );
+  }
+
+  /**
+   * Update valueTo directly via signal (for signal forms compatibility)
+   */
+  updateValueTo(attributeId: number, valueTo: string | null): void {
+    this.updateAttributeFilters((filters) =>
+      filters.map((f: AttributeFilter) => (f.id === attributeId ? { ...f, valueTo } : f)),
     );
   }
 
@@ -300,11 +363,11 @@ export class FilterStepComponent {
   removeAttributeFilter(attributeId: number): void {
     this.updateAttributeFilters((filters) => filters.filter((f) => f.id !== attributeId));
     if (this.attributeFilters().length === 0) {
-      this.value.set({
-        name: this.value().name,
-        eventType: null,
-        attributeFilters: [{ id: 1, property: null, operator: null, type: null, value: null }],
-      });
+      this.filterForm.name().value.set(this.filterForm.name().value());
+      this.filterForm.eventType().value.set(null);
+      this.filterForm
+        .attributeFilters()
+        .value.set([{ id: 1, property: null, operator: null, type: null, value: null }]);
     }
     this.nextAttributeId.set(1);
   }

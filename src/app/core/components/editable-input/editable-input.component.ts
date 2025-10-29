@@ -1,11 +1,18 @@
-import { Component, input, output, signal, linkedSignal } from '@angular/core';
-
+import {
+  Component,
+  input,
+  output,
+  signal,
+  linkedSignal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 
 @Component({
   selector: 'app-editable-input',
   imports: [],
   templateUrl: './editable-input.component.html',
   styleUrl: './editable-input.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditableInputComponent {
   // Inputs
@@ -59,4 +66,3 @@ export class EditableInputComponent {
     }
   }
 }
-

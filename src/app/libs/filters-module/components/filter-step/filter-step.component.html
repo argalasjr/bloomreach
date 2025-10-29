@@ -3,7 +3,7 @@
     <div class="filter-step__header-left">
       <span class="filter-step__number">{{ stepNumber() }}. Step:</span>
       <app-editable-input
-        [value]="value().name"
+        [value]="name()"
         (valueChange)="onNameChange($event)"
         placeholder="Filter name..."
       />
@@ -51,12 +51,11 @@
           @if (first) {
             <label class="filter-step__label">Event</label>
             <app-select
+              [field]="filterForm.eventType"
               [items]="eventTypeOptions()"
-              [value]="selectedEventType()"
               placeholder="Event type..."
               [searchable]="true"
               [minTermLength]="1"
-              (valueChange)="onEventTypeChange($event)"
             >
             </app-select>
           }

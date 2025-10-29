@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FiltersModuleComponent } from '@libs/filters-module';
 
 @Component({
@@ -6,5 +6,6 @@ import { FiltersModuleComponent } from '@libs/filters-module';
   imports: [FiltersModuleComponent],
   templateUrl: './funnel.html',
   styleUrl: './funnel.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FunnelComponent {}

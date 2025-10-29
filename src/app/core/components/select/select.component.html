@@ -1,8 +1,7 @@
 <div [class]="cssClass()">
   <div class="app-select__wrapper">
     <ng-select
-      [ngModel]="value()"
-      (change)="onValueChange($event)"
+      [formControl]="valueControl"
       [items]="filteredItems()"
       [bindLabel]="bindLabel()"
       [bindValue]="bindValue()"
@@ -34,6 +33,7 @@
       (search)="onSearch($event)"
       (add)="onAdd($event)"
       (remove)="onRemove($event)"
+      (change)="onValueChange($event)"
     >
       <!-- Search input in header (when searchable) -->
       @if (searchable() && !headerTemplate()) {
