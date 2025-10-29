@@ -88,9 +88,9 @@ describe('FilterStepComponent', () => {
     });
 
     it('should update displayed text when input value changes and input is blurred', () => {
-      inputElement!.value = 'Test Filter Name';
-      inputElement!.dispatchEvent(new Event('input'));
-      inputElement!.dispatchEvent(new Event('blur'));
+      inputElement.value = 'Test Filter Name';
+      inputElement.dispatchEvent(new Event('input'));
+      inputElement.dispatchEvent(new Event('blur'));
       fixture.detectChanges();
 
       const displayedText =
@@ -128,6 +128,202 @@ describe('FilterStepComponent', () => {
         '.filter-step__field--property .filter-step__label',
       );
       expect(propertySelectLabel?.textContent).toContain('Attribute');
+    });
+  });
+
+  describe('when property is selected', () => {
+    beforeEach(() => {
+      // Select event type first
+      const eventTypeSelect = fixture.debugElement.query((el) => el.name === 'app-select')
+        ?.componentInstance as SelectComponent<string>;
+      eventTypeSelect?.onValueChange({ label: 'Page Visit', value: 'page_visit' });
+      fixture.detectChanges();
+
+      // Select property
+      const propertySelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const propertySelect = propertySelects[1]?.componentInstance as SelectComponent<string>;
+      propertySelect?.onValueChange({ label: 'Url', value: 'url', type: 'string' });
+      fixture.detectChanges();
+    });
+
+    it('should show operator field', () => {
+      const operatorField = compiled.querySelector('.filter-step__field--operator');
+      expect(operatorField).toBeTruthy();
+    });
+
+    it('should display Operator label', () => {
+      const operatorLabel = compiled.querySelector(
+        '.filter-step__field--operator .filter-step__label',
+      );
+      expect(operatorLabel?.textContent).toContain('Operator');
+    });
+
+    it('should render operator select', () => {
+      const operatorSelects = compiled.querySelectorAll('.filter-step__field--operator app-select');
+      expect(operatorSelects.length).toBe(1);
+    });
+  });
+
+  describe('when operator is selected', () => {
+    beforeEach(() => {
+      // Select event type
+      const eventTypeSelect = fixture.debugElement.query((el) => el.name === 'app-select')
+        ?.componentInstance as SelectComponent<string>;
+      eventTypeSelect?.onValueChange({ label: 'Page Visit', value: 'page_visit' });
+      fixture.detectChanges();
+
+      // Select property
+      const propertySelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const propertySelect = propertySelects[1]?.componentInstance as SelectComponent<string>;
+      propertySelect?.onValueChange({ label: 'Url', value: 'url', type: 'string' });
+      fixture.detectChanges();
+
+      // Select operator
+      const operatorSelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const operatorSelect = operatorSelects[2]?.componentInstance as SelectComponent<string>;
+      operatorSelect?.onValueChange({ label: 'Equals', value: 'equals', type: 'string' });
+      fixture.detectChanges();
+    });
+
+    it('should show value field', () => {
+      const valueField = compiled.querySelector('.filter-step__field--value');
+      expect(valueField).toBeTruthy();
+    });
+
+    it('should display Value label', () => {
+      const valueLabel = compiled.querySelector('.filter-step__field--value .filter-step__label');
+      expect(valueLabel?.textContent).toContain('Value');
+    });
+
+    it('should render value input', () => {
+      const valueInput = compiled.querySelector(
+        '.filter-step__field--value input.g-input',
+      ) as HTMLInputElement;
+      expect(valueInput).toBeTruthy();
+    });
+
+    it('should have text input type for string property', () => {
+      const valueInput = compiled.querySelector(
+        '.filter-step__field--value input.g-input',
+      ) as HTMLInputElement;
+      expect(valueInput?.type).toBe('text');
+    });
+  });
+
+  describe('when value is entered', () => {
+    let valueInput: HTMLInputElement | null;
+
+    beforeEach(() => {
+      // Select event type
+      const eventTypeSelect = fixture.debugElement.query((el) => el.name === 'app-select')
+        ?.componentInstance as SelectComponent<string>;
+      eventTypeSelect?.onValueChange({ label: 'Page Visit', value: 'page_visit' });
+      fixture.detectChanges();
+
+      // Select property
+      const propertySelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const propertySelect = propertySelects[1]?.componentInstance as SelectComponent<string>;
+      propertySelect?.onValueChange({ label: 'Url', value: 'url', type: 'string' });
+      fixture.detectChanges();
+
+      // Select operator
+      const operatorSelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const operatorSelect = operatorSelects[2]?.componentInstance as SelectComponent<string>;
+      operatorSelect?.onValueChange({ label: 'Equals', value: 'equals', type: 'string' });
+      fixture.detectChanges();
+
+      valueInput = compiled.querySelector(
+        '.filter-step__field--value input.g-input',
+      ) as HTMLInputElement;
+    });
+
+    it('should update value when input event is triggered', () => {
+      valueInput.value = 'https://example.com';
+      valueInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(valueInput.value).toBe('https://example.com');
+    });
+
+    it('should preserve value after input event', () => {
+      valueInput.value = 'test-value';
+      valueInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      const updatedInput = compiled.querySelector(
+        '.filter-step__field--value input.g-input',
+      ) as HTMLInputElement;
+      expect(updatedInput.value).toBe('test-value');
+    });
+  });
+
+  describe('when between operator is selected', () => {
+    beforeEach(() => {
+      // Select event type
+      const eventTypeSelect = fixture.debugElement.query((el) => el.name === 'app-select')
+        ?.componentInstance as SelectComponent<string>;
+      eventTypeSelect?.onValueChange({ label: 'Page Visit', value: 'page_visit' });
+      fixture.detectChanges();
+
+      // Select number property
+      const propertySelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const propertySelect = propertySelects[1]?.componentInstance as SelectComponent<string>;
+      propertySelect?.onValueChange({ label: 'Duration', value: 'duration', type: 'number' });
+      fixture.detectChanges();
+
+      // Select between operator
+      const operatorSelects = fixture.debugElement.queryAll((el) => el.name === 'app-select');
+      const operatorSelect = operatorSelects[2]?.componentInstance as SelectComponent<string>;
+      operatorSelect?.onValueChange({ label: 'In between', value: 'between', type: 'number' });
+      fixture.detectChanges();
+    });
+
+    it('should show value range fields', () => {
+      const valueRangeFields = compiled.querySelectorAll('.filter-step__field--value-range');
+      expect(valueRangeFields.length).toBe(2);
+    });
+
+    it('should render From input', () => {
+      const fromInput = compiled.querySelector(
+        '.filter-step__field--value-range input[placeholder="From..."]',
+      ) as HTMLInputElement;
+      expect(fromInput).toBeTruthy();
+    });
+
+    it('should render To input', () => {
+      const toInput = compiled.querySelector(
+        '.filter-step__field--value-range input[placeholder="To..."]',
+      ) as HTMLInputElement;
+      expect(toInput).toBeTruthy();
+    });
+
+    it('should have number input type for range inputs', () => {
+      const fromInput = compiled.querySelector(
+        '.filter-step__field--value-range input[placeholder="From..."]',
+      ) as HTMLInputElement;
+      expect(fromInput?.type).toBe('number');
+    });
+
+    it('should update from value when input event is triggered', () => {
+      const fromInput = compiled.querySelector(
+        '.filter-step__field--value-range input[placeholder="From..."]',
+      ) as HTMLInputElement;
+      fromInput.value = '10';
+      fromInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(fromInput.value).toBe('10');
+    });
+
+    it('should update to value when input event is triggered', () => {
+      const toInput = compiled.querySelector(
+        '.filter-step__field--value-range input[placeholder="To..."]',
+      ) as HTMLInputElement;
+      toInput.value = '20';
+      toInput.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(toInput.value).toBe('20');
     });
   });
 
