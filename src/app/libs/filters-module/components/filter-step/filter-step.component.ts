@@ -2,7 +2,7 @@ import { Component, input, output, computed, signal, model } from '@angular/core
 import { SelectComponent, EditableInputComponent } from '@core/components';
 import { SelectOption } from '@core/models';
 import { EventProperty, EventType, OPERATOR_TABS } from '../../models';
-import { CommonModule } from '@angular/common';
+
 
 export interface AttributeFilter {
   id: number;
@@ -22,7 +22,7 @@ export interface FilterStepValue {
 
 @Component({
   selector: 'app-filter-step',
-  imports: [CommonModule, SelectComponent, EditableInputComponent],
+  imports: [SelectComponent, EditableInputComponent],
   templateUrl: './filter-step.component.html',
   styleUrl: './filter-step.component.scss',
 })

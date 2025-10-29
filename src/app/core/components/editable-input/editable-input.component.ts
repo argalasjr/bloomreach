@@ -1,9 +1,9 @@
 import { Component, input, output, signal, linkedSignal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-editable-input',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './editable-input.component.html',
   styleUrl: './editable-input.component.scss',
 })
